@@ -7,7 +7,8 @@ This project is configured for GitHub Pages using Next.js static export.
 - `next.config.ts`
   - `output: "export"`
   - `images.unoptimized: true`
-  - conditional `basePath` and `assetPrefix` for the repository path
+  - `basePath` and `assetPrefix` set to the repository path in production builds
+  - optional override via `NEXT_PUBLIC_BASE_PATH`
 
 ## Repository assumption
 This setup assumes the GitHub repository name is:
@@ -34,3 +35,4 @@ In the repository settings:
 - Because this is a static export, server-only runtime features are not supported.
 - Image optimization is disabled for compatibility with GitHub Pages.
 - Local development is unchanged and still uses `npm run dev`.
+- If a custom workflow is used, this setup remains robust because production builds automatically use the repository base path.
