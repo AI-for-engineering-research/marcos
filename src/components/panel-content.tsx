@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MethodScrollytelling } from "@/components/method-scrollytelling";
 import { PetEasterEgg } from "@/components/pet-easter-egg";
 import { Section } from "@/components/section";
+import { withBasePath } from "@/lib/base-path";
 import { about, research, updates } from "@/lib/site-content";
 
 export function HomePanel() {
@@ -57,7 +58,7 @@ export function ResearchPanel() {
           </div>
           <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-2xl bg-[var(--surface)] p-4">
             <Image
-              src="/contrail-formation.png"
+              src={withBasePath("/contrail-formation.png")}
               alt="Diagram illustrating contrail formation"
               width={1600}
               height={900}
@@ -108,7 +109,7 @@ export function AboutPanel() {
       <Section eyebrow="About me" title="">
         <div className="overflow-hidden rounded-2xl bg-[var(--surface)]">
           <Image
-            src="/my-portrait.png"
+            src={withBasePath("/my-portrait.png")}
             alt="Portrait of Marcos Logroño"
             width={900}
             height={1200}
@@ -124,8 +125,8 @@ export function AboutPanel() {
             <div className="relative rounded-2xl bg-[var(--surface)] p-5">
               <span className="absolute left-[-1.95rem] top-8 h-3 w-3 rounded-full bg-[var(--accent)]" />
               <div className="flex flex-wrap items-start gap-3">
-                <Image src="/icons/puerto-rico-flag.svg" alt="Puerto Rican flag" width={56} height={56} />
-                <Image src="/icons/coconut-tree.svg" alt="Coconut tree icon" width={56} height={56} />
+                <Image src={withBasePath("/icons/puerto-rico-flag.svg")} alt="Puerto Rican flag" width={56} height={56} />
+                <Image src={withBasePath("/icons/coconut-tree.svg")} alt="Coconut tree icon" width={56} height={56} />
               </div>
               <p className="mt-4 leading-8 text-[var(--muted)]">{about.intro}</p>
             </div>
@@ -133,8 +134,8 @@ export function AboutPanel() {
             <div className="relative rounded-2xl bg-[var(--surface)] p-5">
               <span className="absolute left-[-1.95rem] top-8 h-3 w-3 rounded-full bg-[var(--accent)]" />
               <div className="flex flex-wrap items-start gap-3">
-                <Image src="/icons/boston-icon.svg" alt="Boston icon" width={56} height={56} />
-                <Image src="/icons/mit-badge.svg" alt="MIT badge" width={80} height={56} />
+                <Image src={withBasePath("/icons/boston-icon.svg")} alt="Boston icon" width={56} height={56} />
+                <Image src={withBasePath("/icons/mit-badge.svg")} alt="MIT badge" width={80} height={56} />
               </div>
               <p className="mt-4 leading-8 text-[var(--muted)]">
                 {about.background[0]} {about.background[1]}
@@ -145,7 +146,7 @@ export function AboutPanel() {
               <span className="absolute left-[-1.95rem] top-8 h-3 w-3 rounded-full bg-[var(--accent)]" />
               <div className="flex flex-wrap items-start gap-3">
                 <Image
-                  src="/icons/lae-logo.png"
+                  src={withBasePath("/icons/lae-logo.png")}
                   alt="MIT Laboratory for Aviation and the Environment logo"
                   width={96}
                   height={56}

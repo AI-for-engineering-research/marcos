@@ -3,24 +3,25 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll } from "framer-motion";
+import { withBasePath } from "@/lib/base-path";
 
 const steps = [
   {
     title:
       "Develop an advanced early plume model that captures the role of fuel sulfur content (FSC) and soot emissions index on ice particle activation and growth.",
     visuals: [
-      { src: "/fsc-sens.png", alt: "Fuel sulfur content sensitivity figure" },
-      { src: "/temp-sens.png", alt: "Temperature sensitivity figure" },
+      { src: withBasePath("/fsc-sens.png"), alt: "Fuel sulfur content sensitivity figure" },
+      { src: withBasePath("/temp-sens.png"), alt: "Temperature sensitivity figure" },
     ],
   },
   {
     title: "Integrate the new microphysics treatment into the APCEMM framework.",
-    visuals: [{ src: "/apcemm.png", alt: "APCEMM framework figure" }],
+    visuals: [{ src: withBasePath("/apcemm.png"), alt: "APCEMM framework figure" }],
   },
   {
     title:
       "Couple the model with rapid radiative transfer tools to estimate how climate forcing responds to changes in engine design parameters and representative ambient conditions.",
-    visuals: [{ src: "/rf-sens.png", alt: "Radiative forcing sensitivity figure" }],
+    visuals: [{ src: withBasePath("/rf-sens.png"), alt: "Radiative forcing sensitivity figure" }],
   },
 ];
 

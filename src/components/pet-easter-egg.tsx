@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { withBasePath } from "@/lib/base-path";
 
 export function PetEasterEgg() {
   const [activePet, setActivePet] = useState<"nimbus" | "kiwi" | null>(null);
@@ -32,7 +33,7 @@ export function PetEasterEgg() {
       {activePet ? (
         <div className="overflow-hidden rounded-2xl bg-[var(--surface)] p-3">
           <Image
-            src={activePet === "nimbus" ? "/icons/nimbus.jpeg" : "/icons/kiwi.jpeg"}
+            src={activePet === "nimbus" ? withBasePath("/icons/nimbus.jpeg") : withBasePath("/icons/kiwi.jpeg")}
             alt={activePet === "nimbus" ? "Nimbus the cat" : "Kiwi the tortoise"}
             width={1000}
             height={1000}
