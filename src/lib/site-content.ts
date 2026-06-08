@@ -50,45 +50,29 @@ export const updates = [
   {
     week: "Week 1",
     date: "June 2026",
-    title: "Repository audit and portfolio architecture planning",
+    title: "Portfolio design, content refinement, and interaction updates",
     goals: [
-      "Assess the current repository contents.",
-      "Define the site architecture needed for a professional academic portfolio.",
-      "Determine how to preserve and reuse existing research and biography content.",
+      "Build the first working version of the academic portfolio.",
+      "Refine the Project and About sections around research communication goals.",
+      "Add interactive details and document the development work in a simple weekly log.",
     ],
     completed: [
-      "Audited the repository and confirmed it was in a content-only state.",
-      "Created a repo-specific roadmap for a Next.js portfolio implementation.",
-      "Identified `about_me.md` and `research.md` as canonical source content for the first version of the site.",
+      "Set up the portfolio structure in Next.js and created the Home, Project, About, and Research Logs pages.",
+      "Refined the homepage hero with the new project title, centered academic identity line, and simplified layout.",
+      "Updated the navigation labels and added active tab bolding for the current page.",
+      "Reworked the Project page layout, including a revised problem context and a cleaner section structure.",
+      "Added the contrail formation figure and tuned its placement and styling on the Project page.",
+      "Built a scroll-based Method section that cycles through the three research approach steps with figures.",
+      "Redesigned the About page biography into a timeline with Puerto Rico, Boston/MIT, and LAE milestones.",
+      "Integrated the uploaded LAE logo and added clickable Nimbus and Kiwi easter eggs with image reveals.",
+      "Tested and removed experimental side-scrolling page navigation after evaluating the interaction quality.",
     ],
     aiContribution:
-      "AI assisted with repository inspection, gap analysis, implementation planning, and translation of raw markdown content into a structured web architecture.",
+      "AI assisted with implementation, layout refinement, UI iteration, interactive component building, and translation of raw research notes into web-ready content and structure.",
     nextSteps: [
-      "Build the site scaffold.",
-      "Create the required portfolio sections.",
-      "Add feature documentation and an update workflow.",
-    ],
-  },
-  {
-    week: "Week 2",
-    date: "June 2026",
-    title: "Initial portfolio implementation",
-    goals: [
-      "Bootstrap the application.",
-      "Implement shared layout and core routes.",
-      "Create an initial documentation baseline for future additions.",
-    ],
-    completed: [
-      "Set up a Next.js app-router project structure.",
-      "Implemented Home, Research, About, and Updates pages.",
-      "Added docs describing the site structure and content workflow.",
-    ],
-    aiContribution:
-      "AI generated initial page scaffolding, reusable layout ideas, content formatting, and documentation drafts while preserving original repository content.",
-    nextSteps: [
-      "Refine content writing and visuals.",
-      "Add research figures, publications, or project milestones.",
-      "Continue documenting weekly progress and AI-assisted development work.",
+      "Continue polishing the scrollytelling behavior and figure presentation.",
+      "Add more weekly logs documenting research progress and AI-assisted development work.",
+      "Refine project visuals, copy, and documentation as the portfolio evolves.",
     ],
   },
 ];

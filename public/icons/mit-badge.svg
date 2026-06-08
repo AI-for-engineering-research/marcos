@@ -1,0 +1,8 @@
+<svg width="92" height="64" viewBox="0 0 92 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="92" height="64" rx="16" fill="#EFF5FF"/>
+  <rect x="18" y="18" width="7" height="28" fill="#8D99AE"/>
+  <rect x="28" y="18" width="7" height="28" fill="#C7342D"/>
+  <rect x="38" y="18" width="7" height="28" fill="#8D99AE"/>
+  <rect x="48" y="18" width="7" height="28" fill="#C7342D"/>
+  <text x="59" y="38" fill="#102033" font-size="14" font-family="Arial, Helvetica, sans-serif" font-weight="700">MIT</text>
+</svg>
