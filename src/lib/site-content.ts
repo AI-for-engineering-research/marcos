@@ -75,4 +75,29 @@ export const updates = [
       "Refine project visuals, copy, and documentation as the portfolio evolves.",
     ],
   },
+  {
+    week: "Week 2",
+    date: "June 2026",
+    title: "AI-assisted pyEPM test modernization and tooling",
+    goals: [
+      "Review the pyEPM codebase structure and testing gaps.",
+      "Replace stale tests with fast, deterministic unit coverage.",
+      "Set up a reproducible local test environment.",
+    ],
+    completed: [
+      "Added repo-local pi skills for architecture review and skeptical critique workflows.",
+      "Mapped the main pyEPM modules for parameters, ODE solving, aerosols, thermodynamics, and physics.",
+      "Rewrote outdated tests around current APIs, focusing on state roundtrips, grids, PDFs, parsing, ODE RHS behavior, and thermodynamic checks.",
+      "Created a micromamba-based Python 3.12 test environment and installed the project in editable mode.",
+      "Fixed a hardcoded entrainment CSV path by resolving it relative to the module file.",
+      "Verified the updated targeted test suite with 14 passing tests.",
+    ],
+    aiContribution:
+      "AI helped audit architecture, identify stale test assumptions, design targeted unit coverage, implement fixes, and document repeatable test commands.",
+    nextSteps: [
+      "Keep full pyEPM solve runs as marked slow integration tests.",
+      "Expand unit coverage around aerosol microphysics and parameter invariants.",
+      "Use the new pi skills for future architecture and risk reviews.",
+    ],
+  },
 ];
