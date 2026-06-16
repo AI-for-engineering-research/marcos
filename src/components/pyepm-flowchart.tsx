@@ -398,7 +398,7 @@ export function PyepmFlowchart() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-3xl border border-black/8 bg-white/80 p-4 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 sm:p-6">
+        <div className="max-h-[75vh] overflow-y-auto rounded-3xl border border-black/8 bg-white/80 p-4 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 sm:p-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)]">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold">Step-by-step flow</h2>
