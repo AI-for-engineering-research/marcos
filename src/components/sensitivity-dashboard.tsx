@@ -34,12 +34,15 @@ const MIXING_Y_MIN = 0;
 const MIXING_Y_MAX = 0.8; // hPa, matches plotting.py:471
 
 const ICE_TRACES: { name: string; varName: string; color: string; dashed?: boolean }[] = [
-  { name: "Bare soot", varName: "total_soot_per_kgfuel", color: "#000000" },
-  { name: "Sulfur aerosol", varName: "total_liquid_aerosol_per_kgfuel", color: "#00008B" },
-  { name: "Ambient aerosol", varName: "total_ambient_aerosol_per_kgfuel", color: "#7d7d7d" },
-  { name: "Soot ice", varName: "soot_ice_per_kgfuel", color: "#000000", dashed: true },
-  { name: "Sulfur ice", varName: "sulfur_ice_per_kgfuel", color: "#00008B", dashed: true },
-  { name: "Ambient ice", varName: "ambient_ice_per_kgfuel", color: "#7d7d7d", dashed: true },
+  // Convention: same hue per aerosol mode, ice variant = dashed.
+  // Colors chosen to be readable on both light and dark backgrounds
+  // (replace the previous black / darkblue / gray which disappeared on dark theme).
+  { name: "Bare soot", varName: "total_soot_per_kgfuel", color: "#ef4444" },         // red-500
+  { name: "Sulfur aerosol", varName: "total_liquid_aerosol_per_kgfuel", color: "#3b82f6" }, // blue-500
+  { name: "Ambient aerosol", varName: "total_ambient_aerosol_per_kgfuel", color: "#f59e0b" }, // amber-500
+  { name: "Soot ice", varName: "soot_ice_per_kgfuel", color: "#ef4444", dashed: true },
+  { name: "Sulfur ice", varName: "sulfur_ice_per_kgfuel", color: "#3b82f6", dashed: true },
+  { name: "Ambient ice", varName: "ambient_ice_per_kgfuel", color: "#f59e0b", dashed: true },
 ];
 
 // Saturation curves are static; precompute once.
@@ -86,6 +89,29 @@ function fmtSci(x: number): string {
   const e = Math.floor(Math.log10(Math.abs(x)));
   const m = x / Math.pow(10, e);
   return `${m.toFixed(2)}×10^${e}`;
+}
+
+// Unicode superscript digits, used to render axis ticks like "10¹⁵" inline
+// inside SVG <text>. This is the closest you can get to a LaTeX-rendered
+// 10^{15} without dragging KaTeX into the chart engine.
+const _SUPERSCRIPTS = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+function toSuperscript(n: number): string {
+  if (!Number.isInteger(n)) n = Math.round(n);
+  if (n < 0) {
+    return "⁻" + toSuperscript(-n);
+  }
+  return n
+    .toString()
+    .split("")
+    .map((d) => _SUPERSCRIPTS[Number(d)])
+    .join("");
+}
+
+/** Format a positive value as 10^N using Unicode superscripts. */
+function formatPow10(v: number): string {
+  if (!Number.isFinite(v) || v <= 0) return "";
+  const e = Math.round(Math.log10(v));
+  return `10${toSuperscript(e)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -320,7 +346,7 @@ export function SensitivityDashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard title="Mixing line" caption="Plume trajectory in the (T, p_H2O) plane against liquid (dashed) and ice (solid) saturation curves.">
           <ResponsiveContainer width="100%" height={360}>
-            <LineChart margin={{ top: 12, right: 24, bottom: 36, left: 48 }}>
+            <LineChart margin={{ top: 12, right: 16, bottom: 32, left: 48 }}>
               <CartesianGrid stroke="rgba(127,127,127,0.25)" />
               <XAxis
                 type="number"
@@ -328,18 +354,25 @@ export function SensitivityDashboard() {
                 domain={[MIXING_X_MIN, MIXING_X_MAX]}
                 allowDataOverflow
                 tickCount={6}
-                label={{ value: "Temperature [K]", position: "insideBottom", offset: -18 }}
+                tick={{ fontSize: 10 }}
+                label={{
+                  value: "Temperature [K]",
+                  position: "insideBottom",
+                  offset: -16,
+                  style: { fontSize: 11, textAnchor: "middle" },
+                }}
               />
               <YAxis
                 type="number"
                 domain={[MIXING_Y_MIN, MIXING_Y_MAX]}
                 allowDataOverflow
+                tick={{ fontSize: 10 }}
                 label={{
                   value: "Water vapor partial pressure [hPa]",
                   angle: -90,
                   position: "insideLeft",
-                  offset: -8,
-                  style: { textAnchor: "middle" },
+                  offset: 0,
+                  style: { fontSize: 11, textAnchor: "middle" },
                 }}
               />
               <Tooltip
@@ -349,7 +382,7 @@ export function SensitivityDashboard() {
                 ]}
                 labelFormatter={(t: unknown) => `T = ${Number(t).toFixed(2)} K`}
               />
-              <Legend verticalAlign="top" height={28} />
+              <Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: 11 }} />
               <Line
                 data={SAT_CURVE}
                 dataKey="ice_hPa"
@@ -387,29 +420,38 @@ export function SensitivityDashboard() {
 
         <ChartCard title="Particle / ice time series" caption="Number per kg-fuel. Solid = bare aerosol or soot, dashed = ice formed on that mode.">
           <ResponsiveContainer width="100%" height={360}>
-            <LineChart data={charts.iceRows} margin={{ top: 12, right: 24, bottom: 36, left: 64 }}>
+            <LineChart data={charts.iceRows} margin={{ top: 12, right: 16, bottom: 32, left: 48 }}>
               <CartesianGrid stroke="rgba(127,127,127,0.25)" />
               <XAxis
                 type="number"
                 dataKey="t"
-                scale="log"
-                domain={["auto", "auto"]}
+                scale="linear"
+                domain={[0, 1]}
+                ticks={[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]}
                 allowDataOverflow
-                tickFormatter={(v: unknown) => fmtSci(Number(v))}
-                label={{ value: "Time [s]", position: "insideBottom", offset: -18 }}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(v: unknown) => Number(v).toFixed(1)}
+                label={{
+                  value: "Time [s]",
+                  position: "insideBottom",
+                  offset: -16,
+                  style: { fontSize: 11, textAnchor: "middle" },
+                }}
               />
               <YAxis
                 type="number"
                 scale="log"
-                domain={["auto", "auto"]}
+                domain={[1e9, 1e17]}
+                ticks={[1e9, 1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17]}
                 allowDataOverflow
-                tickFormatter={(v: unknown) => fmtSci(Number(v))}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(v: unknown) => formatPow10(Number(v))}
                 label={{
                   value: "Particles per kg-fuel",
                   angle: -90,
                   position: "insideLeft",
-                  offset: -16,
-                  style: { textAnchor: "middle" },
+                  offset: 4,
+                  style: { fontSize: 11, textAnchor: "middle" },
                 }}
               />
               <Tooltip
@@ -417,9 +459,9 @@ export function SensitivityDashboard() {
                   Number.isFinite(Number(v)) ? fmtSci(Number(v)) : "—",
                   String(name),
                 ]}
-                labelFormatter={(t: unknown) => `t = ${Number(t).toExponential(2)} s`}
+                labelFormatter={(t: unknown) => `t = ${Number(t).toFixed(3)} s`}
               />
-              <Legend verticalAlign="top" height={28} />
+              <Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: 11 }} />
               {ICE_TRACES.map((tr) => (
                 <Line
                   key={tr.varName}
@@ -427,7 +469,7 @@ export function SensitivityDashboard() {
                   dataKey={tr.varName}
                   name={tr.name}
                   stroke={tr.color}
-                  strokeWidth={1.8}
+                  strokeWidth={2.2}
                   strokeDasharray={tr.dashed ? "6 4" : undefined}
                   dot={false}
                   isAnimationActive={false}
