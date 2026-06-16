@@ -146,36 +146,9 @@ const flowSteps: FlowStep[] = [
     ],
   },
   {
-    id: "supersaturation",
-    phase: "Thermodynamics",
-    title: "5. Diagnose water and ice supersaturation",
-    short:
-      "The model converts water mixing ratio and temperature into saturation ratios that control activation, growth, and freezing.",
-    code: ["pyepm/epm/ivp.py: derived states", "pyepm/thermo/__init__.py: pSat_H2Ol, pSat_H2Os"],
-    inputs: [
-      "Current T, pₐ, and xH₂O after plume dilution.",
-      "Saturation vapor pressures over liquid water and ice.",
-    ],
-    equations: [
-      String.raw`\mathrm{RH}_l=\frac{x_{\mathrm{H_2O}}p_a}{p_{\mathrm{sat},l}(T)}`,
-      String.raw`\mathrm{RH}_i=\frac{x_{\mathrm{H_2O}}p_a}{p_{\mathrm{sat},i}(T)}`,
-      String.raw`\mathrm{Ice\ supersaturation:}\quad \mathrm{RH}_i>1;\qquad \mathrm{activation:}\quad S_{amb}\ge S_{v,crit}`,
-    ],
-    parameters: [
-      "p_sat,liq(T): liquid-water saturation vapor pressure.",
-      "p_sat,ice(T): ice saturation vapor pressure.",
-      "The cold ambient state can make RHi high even when RHw is below unity.",
-    ],
-    outputs: ["Time series of RHl and RHi; these are key diagnostics for any predicted ice event."],
-    checks: [
-      "Ice formation without a plausible supersaturation history should be flagged.",
-      "Water vapor removal by condensation/deposition must feed back on xH₂O.",
-    ],
-  },
-  {
     id: "sulfur-ions",
     phase: "Microphysics",
-    title: "6. Grow H₂SO₄ particles and ion clusters",
+    title: "5. Grow H₂SO₄ particles and ion clusters",
     short:
       "Gas-phase sulfuric acid, neutral clusters, and charged clusters evolve through condensation, evaporation, and coagulation.",
     code: ["pyepm/aerosols/__init__.py: kinetic_growth_full_imn", "pyepm/aerosols/coagulation.py"],
@@ -207,7 +180,7 @@ const flowSteps: FlowStep[] = [
   {
     id: "soot-coating",
     phase: "Microphysics",
-    title: "7. Coat soot and update soot hygroscopicity",
+    title: "6. Coat soot and update soot hygroscopicity",
     short:
       "Sulfur aerosol coagulating with soot increases the effective soot κ, making soot easier to activate in water-supersaturated plume air.",
     code: ["pyepm/aerosols/__init__.py: update_kappa_soot"],
@@ -234,7 +207,7 @@ const flowSteps: FlowStep[] = [
   {
     id: "kohler",
     phase: "Activation",
-    title: "8. Activate liquid droplets with κ-Köhler theory",
+    title: "7. Activate liquid droplets with κ-Köhler theory",
     short:
       "Each aerosol mode grows hygroscopically; particles activate when ambient saturation exceeds their critical Köhler saturation.",
     code: ["pyepm/aerosols/activation.py", "pyepm/aerosols/__init__.py: Aerosol.evolve_dw_stable"],
@@ -264,7 +237,7 @@ const flowSteps: FlowStep[] = [
   {
     id: "freezing-growth",
     phase: "Ice formation",
-    title: "9. Freeze activated droplets and grow ice",
+    title: "8. Freeze activated droplets and grow ice",
     short:
       "Activated droplets freeze with a Koop water-activity criterion; newly frozen and existing ice particles then grow by deposition.",
     code: ["pyepm/aerosols/iceNucleation.py: iceNucleationKoop", "pyepm/aerosols/__init__.py: Aerosol.evolve_dw_deposition"],
@@ -296,7 +269,7 @@ const flowSteps: FlowStep[] = [
   {
     id: "outputs",
     phase: "Outputs",
-    title: "10. Report the predicted ice population",
+    title: "9. Report the predicted ice population",
     short:
       "The main scientific output is the ice number and size distribution, traceable by precursor type and normalized per kg fuel.",
     code: ["pyepm/epm/ivp.py: pyEPM.solve", "pyepm/epm/solution.py: Solution.write"],
@@ -327,7 +300,7 @@ const flowSteps: FlowStep[] = [
   },
 ];
 
-const groupedPhases = ["Inputs", "Initialization", "Plume dynamics", "Thermodynamics", "Microphysics", "Activation", "Ice formation", "Outputs"];
+const groupedPhases = ["Inputs", "Initialization", "Plume dynamics", "Microphysics", "Activation", "Ice formation", "Outputs"];
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
