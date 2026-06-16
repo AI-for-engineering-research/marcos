@@ -44,3 +44,63 @@ body {
 a {
   text-decoration: none;
 }
+
+/* ---------------------------------------------------------------------
+ * Range slider styling for the Sensitivity dashboard.
+ * Larger thumb + thicker track to make it easy to drag on touch devices,
+ * cross-browser (WebKit + Firefox) because each engine styles separately.
+ * ------------------------------------------------------------------- */
+input[type="range"].slider-lg {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;            /* generous hit area */
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].slider-lg:focus {
+  outline: none;
+}
+
+/* Track ----------------------------------------------------------------- */
+input[type="range"].slider-lg::-webkit-slider-runnable-track {
+  height: 8px;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 999px;
+}
+input[type="range"].slider-lg::-moz-range-track {
+  height: 8px;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 999px;
+}
+
+/* Thumb ----------------------------------------------------------------- */
+input[type="range"].slider-lg::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  margin-top: -7px;        /* center on the 8px track */
+  transition: transform 0.1s ease;
+}
+input[type="range"].slider-lg::-webkit-slider-thumb:hover,
+input[type="range"].slider-lg:focus::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+input[type="range"].slider-lg::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease;
+}
+input[type="range"].slider-lg::-moz-range-thumb:hover,
+input[type="range"].slider-lg:focus::-moz-range-thumb {
+  transform: scale(1.1);
+}

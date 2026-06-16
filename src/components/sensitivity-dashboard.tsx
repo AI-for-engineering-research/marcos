@@ -225,7 +225,7 @@ export function SensitivityDashboard() {
         title="Interactive parameter sweep"
         description="Move the sliders to explore how the early-plume mixing line and the ice / aerosol time series respond to engine exhaust and ambient conditions. Values between grid nodes are multilinearly interpolated from precomputed pyEPM solves; this is not a live solve."
       >
-        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-start">
+        <div className="flex flex-col gap-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <SliderRow
               label="FSC"
@@ -283,29 +283,31 @@ export function SensitivityDashboard() {
             />
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl bg-[var(--surface)] p-4 text-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-              Lookup mode
-            </p>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="mode"
-                checked={mode === "interp"}
-                onChange={() => setMode("interp")}
-              />
-              <span>Interpolate (default)</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="mode"
-                checked={mode === "snap"}
-                onChange={() => setMode("snap")}
-              />
-              <span>Snap to nearest grid node</span>
-            </label>
-            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+          <div className="rounded-2xl bg-[var(--surface)] p-5 text-sm">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                Lookup mode
+              </p>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="mode"
+                  checked={mode === "interp"}
+                  onChange={() => setMode("interp")}
+                />
+                <span>Interpolate (default)</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="mode"
+                  checked={mode === "snap"}
+                  onChange={() => setMode("snap")}
+                />
+                <span>Snap to nearest grid node</span>
+              </label>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
               Interpolation is multilinear in log10(FSC), log10(EI soot), T<sub>amb</sub>, and N₀.
               Smooth response between grid nodes does not imply smooth physics — known thresholds
               (Schmidt-Appleman, freezing onset) can be smeared by interpolation. Use “snap” to
@@ -510,15 +512,15 @@ function SliderRow({
   void rangeMin;
   void rangeMax;
   return (
-    <div className="rounded-2xl bg-[var(--surface)] p-4">
+    <div className="rounded-2xl bg-[var(--surface)] p-5">
       <div className="flex items-baseline justify-between">
         <span className="text-sm font-semibold">
           {label} <span className="font-normal text-[var(--muted)]">[{units}]</span>
         </span>
-        <span className="font-mono text-sm">{valueLabel}</span>
+        <span className="font-mono text-base">{valueLabel}</span>
       </div>
       <input
-        className="mt-3 w-full"
+        className="slider-lg mt-4"
         type="range"
         min={0}
         max={1}
@@ -526,12 +528,8 @@ function SliderRow({
         value={sliderUnit}
         onChange={(e) => onSliderUnit(parseFloat(e.target.value))}
       />
-      <div className="mt-2 flex items-center justify-between text-xs text-[var(--muted)]">
-        <span>{rangeLabel}</span>
-        <span>{gridValues.length} grid pts</span>
-      </div>
-      {/* Render small tick marks at each grid node so the user can see snap positions. */}
-      <div className="relative mt-1 h-2">
+      {/* Tick marks at each grid node so the user can see snap positions. */}
+      <div className="relative mt-1 h-3">
         {gridValues.map((g) => {
           let unit: number;
           if (logScale) {
@@ -546,11 +544,15 @@ function SliderRow({
           return (
             <span
               key={g}
-              className="absolute top-0 h-2 w-px bg-[var(--accent)]/40"
-              style={{ left: `${unit * 100}%` }}
+              className="absolute top-0 h-3 w-px bg-[var(--accent)]/50"
+              style={{ left: `calc(${unit * 100}% - 0.5px)` }}
             />
           );
         })}
+      </div>
+      <div className="mt-2 flex items-center justify-between text-xs text-[var(--muted)]">
+        <span>{rangeLabel}</span>
+        <span>{gridValues.length} grid pts</span>
       </div>
     </div>
   );
