@@ -100,4 +100,32 @@ export const updates = [
       "Use the new pi skills for future architecture and risk reviews.",
     ],
   },
+  {
+    week: "Week 3",
+    date: "June 2026",
+    title: "Interactive 4D pyEPM sensitivity dashboard on the portfolio site",
+    goals: [
+      "Add a Sensitivity tab to the portfolio that lets users interactively explore how engine and ambient parameters change the early-plume mixing line and ice / aerosol time series.",
+      "Sweep FSC, soot emission index, ambient temperature, and initial dilution N\u2080 across physically meaningful ranges and ship the results as a precomputed lookup, since GitHub Pages is static-only.",
+      "Keep the workflow reproducible end to end, from cluster job to live URL.",
+    ],
+    completed: [
+      "Designed a precomputed-lookup architecture: a 4D pyEPM cube + JSON manifest + Float32 binary sidecar, loaded once by the page and indexed on slider change.",
+      "Built a local sweep driver (pyepm-sweep4d) with serial and parallel modes; verified bit-exact identical output between serial, parallel, and SLURM-distributed pipelines.",
+      "Wrote a SLURM array driver (pyepm-sweep-slurm.py) and a separate gather command (pyepm-sweep-gather) that assembles per-case NPZ files from the cluster into the dashboard cube, with strict validation against missing cells, axis-value drift, and non-finite or negative concentrations.",
+      "Reduced the 4D grid from 1050 to 600 cases (6 \u00d7 5 \u00d7 4 \u00d7 5) so the SLURM array fits under the cluster's MaxArraySize=1001 limit, while keeping the SAC threshold cluster on the T_amb axis.",
+      "Implemented the Sensitivity tab with four sliders and two recharts panels reproducing notebooks/plotting.py:mixingLine() and time_series_ice(), plus an interpolate / snap-to-nearest toggle and a frozen-parameters card listing every value held constant during the sweep.",
+      "Ported the pSat_H2Ol and pSat_H2Os parameterizations from pyepm/thermo into the dashboard so the saturation curves drawn in the browser match the Python reference figures exactly.",
+      "Iterated on UI polish: bigger slider thumbs styled for both WebKit and Firefox, repositioned the lookup-mode card to stop overlapping the sliders, switched the ice-plot palette to a high-contrast red / blue / amber set that is legible on both light and dark themes, and rendered y-axis powers of ten as Unicode superscripts.",
+      "Caught and fixed several bugs along the way, including a numpy auto-extension bug that killed all 600 SLURM tasks on the first submission and a t = 0 entry that broke log-scale time plots.",
+    ],
+    aiContribution:
+      "AI proposed the precomputed-lookup architecture and ranked it against a Pyodide live solve, designed the binary cube + manifest format with traceability fields, scaffolded the sweep driver, SLURM array script, and gather command with end-to-end reproducibility checks, ported the saturation thermodynamics into the dashboard, and iterated on the UI based on direct visual feedback. AI also flagged scientific caveats (interpolation between grid nodes can smear physical thresholds, linear time axis compresses the activation phase) instead of silently complying.",
+    nextSteps: [
+      "Decide whether to keep the linear [0, 1] s ice-plot axis or switch to a log axis that preserves the activation phase.",
+      "Re-run the sweep with the 212 K T_amb node included if the cluster's array-size limit can be raised on a different partition.",
+      "Extend the dashboard to expose a derived ice-number-per-cm\u00b3 panel and a Schmidt-Appleman threshold overlay on the mixing line.",
+      "Move the binary cube to git-LFS once a few sweep iterations have accumulated in repo history.",
+    ],
+  },
 ];
