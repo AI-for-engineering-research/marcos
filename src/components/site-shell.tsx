@@ -7,6 +7,7 @@ const navItems = [
   { href: "/", label: "Home" },
   { href: "/research", label: "Project" },
   { href: "/flowchart", label: "Flowchart" },
+  { href: "/sensitivity", label: "Sensitivity" },
   { href: "/about", label: "About" },
   { href: "/updates", label: "Research Logs" },
 ];
