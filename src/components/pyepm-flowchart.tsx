@@ -1,6 +1,8 @@
 "use client";
 
+import katex from "katex";
 import { useMemo, useState } from "react";
+import "katex/dist/katex.min.css";
 
 type FlowStep = {
   id: string;
@@ -30,8 +32,8 @@ const flowSteps: FlowStep[] = [
       "Simulation: initial time, final time, and number of timesteps.",
     ],
     equations: [
-      "RHw = RHi · p_sat,ice(Tₐ) / p_sat,liq(Tₐ)",
-      "n_air(T,p) = N_A p / (R T · 10⁶)  [molecules cm⁻³]",
+      String.raw`\mathrm{RH}_w = \mathrm{RH}_i \, \frac{p_{\mathrm{sat},i}(T_a)}{p_{\mathrm{sat},l}(T_a)}`,
+      String.raw`n_{\mathrm{air}}(T,p)=\frac{N_A p}{R T \, 10^6}\quad [\mathrm{molecules}\;\mathrm{cm}^{-3}]`,
     ],
     parameters: [
       "FSC [ppm]: fuel sulfur content controlling available sulfur mass.",
@@ -59,11 +61,11 @@ const flowSteps: FlowStep[] = [
       "EI(H₂O), EIsoot, EIions, FSC, SO₂→SO₄ conversion, sulfur vPM number.",
     ],
     equations: [
-      "initial_dilution = ρ_air(T₀,pₐ) · 10⁻⁶ / (N₀ · N_eng)  if mass-based dilution is used",
-      "H₂O_eng = EI(H₂O) · (N_A/MW_H₂O) · initial_dilution",
-      "SO₄_eng = f_SO₂→SO₄ · (FSC/5×10⁵) · (N_A/MW_H₂SO₄) · initial_dilution",
-      "Soot = EIsoot · initial_dilution;  Ions = EIions · initial_dilution",
-      "xᵢ = concentrationᵢ / n_air(T₀,pₐ)",
+      String.raw`D_0=\frac{\rho_{\mathrm{air}}(T_0,p_a)\,10^{-6}}{N_0 N_{\mathrm{eng}}}\quad\text{(mass-based dilution)}`,
+      String.raw`[\mathrm{H_2O}]_{\mathrm{eng}}=\mathrm{EI}_{\mathrm{H_2O}}\,\frac{N_A}{MW_{\mathrm{H_2O}}}\,D_0`,
+      String.raw`[\mathrm{SO_4}]_{\mathrm{eng}}=f_{\mathrm{SO_2\to SO_4}}\left(\frac{\mathrm{FSC}}{5\times10^5}\right)\frac{N_A}{MW_{\mathrm{H_2SO_4}}}D_0`,
+      String.raw`N_{\mathrm{soot}}=\mathrm{EI}_{\mathrm{soot}}D_0,\qquad N_{\mathrm{ions}}=\mathrm{EI}_{\mathrm{ions}}D_0`,
+      String.raw`x_i=\frac{C_i}{n_{\mathrm{air}}(T_0,p_a)}`,
     ],
     parameters: [
       "N₀ [kg air/kg fuel]: sets how concentrated the initial plume is.",
@@ -93,9 +95,9 @@ const flowSteps: FlowStep[] = [
       "Ice radius grid from 10⁻⁸ to 10⁻⁴ m.",
     ],
     equations: [
-      "dN/dlnr = N · exp[-0.5(ln r − ln r_g)² / ln²σ_g] / (√(2π) lnσ_g)",
-      "N_total ≈ Σ_j pdf_j Δlnr_j",
-      "V_j = (4/3)π r_j³",
+      String.raw`\frac{dN}{d\ln r}=\frac{N}{\sqrt{2\pi}\ln\sigma_g}\exp\left[-\frac{1}{2}\left(\frac{\ln r-\ln r_g}{\ln\sigma_g}\right)^2\right]`,
+      String.raw`N_{\mathrm{total}}\approx\sum_j pdf_j\,\Delta\ln r_j`,
+      String.raw`V_j=\frac{4}{3}\pi r_j^3`,
     ],
     parameters: [
       "GMD: geometric mean diameter; radius grid uses GMD/2 as geometric mean radius.",
@@ -124,10 +126,10 @@ const flowSteps: FlowStep[] = [
       "Kärcher-style entrainment parameterization.",
     ],
     equations: [
-      "ω(t)=0 for t≤τ;  ω(t)=0.9/t for τ<t≤t₁; later vortex/dispersion forms follow Kärcher (1995)",
-      "dT/dt = −ω(t)(T − Tₐ)",
-      "dxH₂O/dt = −ω(t)(xH₂O − xH₂Oₐ)",
-      "dxSoot/dt = −ω(t)xSoot;  dxIce/dt = −ω(t)xIce",
+      String.raw`\omega(t)=\begin{cases}0,&t\le\tau\\0.9/t,&\tau<t\le t_1\\\omega_{\mathrm{vortex/dispersion}}(t),&t>t_1\end{cases}`,
+      String.raw`\frac{dT}{dt}=-\omega(t)(T-T_a)`,
+      String.raw`\frac{dx_{\mathrm{H_2O}}}{dt}=-\omega(t)\left(x_{\mathrm{H_2O}}-x_{\mathrm{H_2O},a}\right)`,
+      String.raw`\frac{dx_{\mathrm{soot}}}{dt}=-\omega x_{\mathrm{soot}},\qquad \frac{dx_{\mathrm{ice}}}{dt}=-\omega x_{\mathrm{ice}}`,
     ],
     parameters: [
       "τ≈10 ms: no entrainment before the early-jet timescale in the current implementation.",
@@ -155,9 +157,9 @@ const flowSteps: FlowStep[] = [
       "Saturation vapor pressures over liquid water and ice.",
     ],
     equations: [
-      "RHl = xH₂O · pₐ / p_sat,liq(T)",
-      "RHi = xH₂O · pₐ / p_sat,ice(T)",
-      "Ice supersaturation occurs when RHi > 1; liquid activation requires reaching the κ-Köhler critical saturation for each particle.",
+      String.raw`\mathrm{RH}_l=\frac{x_{\mathrm{H_2O}}p_a}{p_{\mathrm{sat},l}(T)}`,
+      String.raw`\mathrm{RH}_i=\frac{x_{\mathrm{H_2O}}p_a}{p_{\mathrm{sat},i}(T)}`,
+      String.raw`\mathrm{Ice\ supersaturation:}\quad \mathrm{RH}_i>1;\qquad \mathrm{activation:}\quad S_{amb}\ge S_{v,crit}`,
     ],
     parameters: [
       "p_sat,liq(T): liquid-water saturation vapor pressure.",
@@ -183,10 +185,10 @@ const flowSteps: FlowStep[] = [
       "Temperature-dependent Brownian kernels and ion enhancement factors.",
     ],
     equations: [
-      "β = β_Brownian + β_diffusion-enhancement",
-      "charged enhancement E_ij follows Yu and Turco-style Coulomb/dipole interaction integrals",
-      "condensation: cluster_i + H₂SO₄(vapor) → cluster_{i+1}",
-      "coagulation: V_i + V_j → V_i+V_j distributed between neighboring volume bins",
+      String.raw`\beta_{ij}=\beta^{\mathrm{Brownian}}_{ij}+\beta^{\mathrm{diff.\ enh.}}_{ij}`,
+      String.raw`\beta^{\mathrm{charged}}_{ij}=E_{ij}(T,q_i,q_j,r_i,r_j)\,\beta_{ij}`,
+      String.raw`\mathrm{cluster}_i+\mathrm{H_2SO_4}_{(g)}\rightarrow\mathrm{cluster}_{i+1}`,
+      String.raw`V_i+V_j\rightarrow V_{ij},\qquad V_{ij}\text{ is remapped to adjacent bins}`,
     ],
     parameters: [
       "EIions: initializes positive and negative molecular ions.",
@@ -215,8 +217,8 @@ const flowSteps: FlowStep[] = [
       "κ_soot and κ_vPM from the YAML aerosol submenu.",
     ],
     equations: [
-      "θ_i(t+Δt) = θ_i(t) + Δt Σ_j K_{ij}^{SO₄-soot} N_j^{SO₄} V_j^{SO₄}",
-      "κ_soot,eff = (V_soot κ_soot + θ κ_vPM) / (V_soot + θ)",
+      String.raw`\theta_i(t+\Delta t)=\theta_i(t)+\Delta t\sum_j K^{\mathrm{SO_4-soot}}_{ij}N^{\mathrm{SO_4}}_jV^{\mathrm{SO_4}}_j`,
+      String.raw`\kappa_{\mathrm{soot,eff}}=\frac{V_{\mathrm{soot}}\kappa_{\mathrm{soot}}+\theta\kappa_{vPM}}{V_{\mathrm{soot}}+\theta}`,
     ],
     parameters: [
       "κ_soot≈hydrophobic initial soot value.",
@@ -241,9 +243,9 @@ const flowSteps: FlowStep[] = [
       "Critical wet diameter and saturation for each bin.",
     ],
     equations: [
-      "a_w = (d_w³ − d_dry³) / (d_w³ − (1−κ)d_dry³)",
-      "S_v(d_w) = a_w · exp[4σ_w/a MW_H₂O / (R T ρ_H₂O d_w)]",
-      "Activation if S_amb ≥ S_v,crit or d_w ≥ d_w,crit",
+      String.raw`a_w=\frac{d_w^3-d_{dry}^3}{d_w^3-(1-\kappa)d_{dry}^3}`,
+      String.raw`S_v(d_w)=a_w\exp\left(\frac{4\sigma_{w/a}MW_{\mathrm{H_2O}}}{RT\rho_{\mathrm{H_2O}}d_w}\right)`,
+      String.raw`\mathrm{activated}\iff S_{amb}\ge S_{v,crit}\quad\mathrm{or}\quad d_w\ge d_{w,crit}`,
     ],
     parameters: [
       "κ: hygroscopicity of soot, sulfur, or ambient aerosol.",
@@ -271,10 +273,10 @@ const flowSteps: FlowStep[] = [
       "Water vapor saturation with respect to ice and liquid.",
     ],
     equations: [
-      "a_w,i(T) from ice/liquid chemical-potential equality; Δa_w = a_w − a_w,i",
-      "log₁₀ J = −906.7 + 8502Δa_w − 26924Δa_w² + 29180Δa_w³",
-      "P_freeze = 1 − exp[−V_liq J / τ_f⁻¹]",
-      "dm/dt = 4πρ r G(r,T,p)(f·S_amb − S_particle)",
+      String.raw`\Delta a_w=a_w-a_{w,i}(T)`,
+      String.raw`\log_{10}J=-906.7+8502\Delta a_w-26924\Delta a_w^2+29180\Delta a_w^3`,
+      String.raw`P_{freeze}=1-\exp\left(-\frac{V_{liq}J}{\tau_f^{-1}}\right)`,
+      String.raw`\frac{dm}{dt}=4\pi\rho rG(r,T,p)\left(fS_{amb}-S_{particle}\right)`,
     ],
     parameters: [
       "J: homogeneous ice nucleation rate from Koop et al. water-activity parameterization.",
@@ -303,10 +305,10 @@ const flowSteps: FlowStep[] = [
       "Dilution factor converting cm⁻³ plume concentrations to #/kg fuel.",
     ],
     equations: [
-      "N_ice,cm⁻³ = xIce · n_air(T,p)",
-      "N_ice,kgfuel⁻¹ = N_ice,cm⁻³ · dilution",
-      "f_ice,soot = 1 − N_soot,kgfuel⁻¹(t) / N_soot,kgfuel⁻¹(0)",
-      "ice_pdf = pdf_ice,sulfur + pdf_ice,ions + pdf_ice,soot + pdf_ice,ambient",
+      String.raw`N_{ice,\mathrm{cm}^{-3}}=x_{ice}\,n_{air}(T,p)`,
+      String.raw`N_{ice,\mathrm{kgfuel}^{-1}}=N_{ice,\mathrm{cm}^{-3}}\,D`,
+      String.raw`f_{ice,soot}=1-\frac{N_{soot,\mathrm{kgfuel}^{-1}}(t)}{N_{soot,\mathrm{kgfuel}^{-1}}(0)}`,
+      String.raw`pdf_{ice}=pdf_{ice,sulfur}+pdf_{ice,ions}+pdf_{ice,soot}+pdf_{ice,ambient}`,
     ],
     parameters: [
       "dilution: derived from mass-based dilution or plume area/fuel-flow relation.",
@@ -348,6 +350,21 @@ function DetailList({ title, items }: { title: string; items: string[] }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+function EquationBlock({ equation }: { equation: string }) {
+  const html = katex.renderToString(equation, {
+    displayMode: true,
+    throwOnError: false,
+    strict: false,
+  });
+
+  return (
+    <div
+      className="overflow-x-auto rounded-xl bg-black/[0.03] px-4 py-4 text-[var(--foreground)] dark:bg-white/[0.06] [&_.katex-display]:my-0 [&_.katex]:text-[1.03rem]"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
 
@@ -455,9 +472,7 @@ export function PyepmFlowchart() {
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em]">Relevant equations</h3>
               <div className="mt-3 space-y-2">
                 {activeStep.equations.map((eq) => (
-                  <div key={eq} className="overflow-x-auto rounded-xl bg-black/[0.03] px-4 py-3 font-mono text-sm leading-7 text-[var(--foreground)] dark:bg-white/[0.06]">
-                    {eq}
-                  </div>
+                  <EquationBlock key={eq} equation={eq} />
                 ))}
               </div>
             </div>
