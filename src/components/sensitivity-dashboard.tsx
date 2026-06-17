@@ -20,6 +20,7 @@ import {
   loadSweep,
   pSatH2OlPa,
   pSatH2OsPa,
+  snapToAxisValue,
   timeSeries,
 } from "@/lib/sweep-data";
 
@@ -32,7 +33,7 @@ const MIXING_X_MIN = 210;
 const MIXING_X_MAX = 260;
 const MIXING_Y_MIN = 0;
 const MIXING_Y_MAX = 0.8; // hPa, matches plotting.py:471
-const PLOT_HEIGHT_PX = 260;
+const PLOT_HEIGHT_PX = 280;
 
 const ICE_TRACES: { name: string; varName: string; color: string; dashed?: boolean }[] = [
   // Convention: same hue per aerosol mode, ice variant = dashed.
@@ -308,7 +309,16 @@ export function SensitivityDashboard() {
                 valueLabel={fmtCompact(sliders.fsc)}
                 sliderUnit={valueToLogSlider(sliders.fsc, ranges.fsc)}
                 onSliderUnit={(u) =>
-                  setSliders((s) => ({ ...s, fsc: logSliderToValue(u, ranges.fsc) }))
+                  setSliders((s) => {
+                    const next = logSliderToValue(u, ranges.fsc);
+                    return {
+                      ...s,
+                      fsc:
+                        mode === "snap"
+                          ? snapToAxisValue(m.axes.fsc_ppm, next, Math.log10)
+                          : next,
+                    };
+                  })
                 }
                 rangeMin={ranges.fsc.min}
                 rangeMax={ranges.fsc.max}
@@ -322,7 +332,16 @@ export function SensitivityDashboard() {
                 valueLabel={formatSciSup(sliders.soot)}
                 sliderUnit={valueToLogSlider(sliders.soot, ranges.soot)}
                 onSliderUnit={(u) =>
-                  setSliders((s) => ({ ...s, soot: logSliderToValue(u, ranges.soot) }))
+                  setSliders((s) => {
+                    const next = logSliderToValue(u, ranges.soot);
+                    return {
+                      ...s,
+                      soot:
+                        mode === "snap"
+                          ? snapToAxisValue(m.axes.soot_per_kgfuel, next, Math.log10)
+                          : next,
+                    };
+                  })
                 }
                 rangeMin={ranges.soot.min}
                 rangeMax={ranges.soot.max}
@@ -336,7 +355,16 @@ export function SensitivityDashboard() {
                 valueLabel={sliders.tAmb.toFixed(1)}
                 sliderUnit={valueToLinSlider(sliders.tAmb, ranges.tAmb)}
                 onSliderUnit={(u) =>
-                  setSliders((s) => ({ ...s, tAmb: linSliderToValue(u, ranges.tAmb) }))
+                  setSliders((s) => {
+                    const next = linSliderToValue(u, ranges.tAmb);
+                    return {
+                      ...s,
+                      tAmb:
+                        mode === "snap"
+                          ? snapToAxisValue(m.axes.temperature_amb_K, next)
+                          : next,
+                    };
+                  })
                 }
                 rangeMin={ranges.tAmb.min}
                 rangeMax={ranges.tAmb.max}
@@ -349,7 +377,16 @@ export function SensitivityDashboard() {
                 valueLabel={sliders.n0.toFixed(1)}
                 sliderUnit={valueToLinSlider(sliders.n0, ranges.n0)}
                 onSliderUnit={(u) =>
-                  setSliders((s) => ({ ...s, n0: linSliderToValue(u, ranges.n0) }))
+                  setSliders((s) => {
+                    const next = linSliderToValue(u, ranges.n0);
+                    return {
+                      ...s,
+                      n0:
+                        mode === "snap"
+                          ? snapToAxisValue(m.axes.n0_kg_air_per_kg_fuel, next)
+                          : next,
+                    };
+                  })
                 }
                 rangeMin={ranges.n0.min}
                 rangeMax={ranges.n0.max}

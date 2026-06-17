@@ -179,6 +179,14 @@ export function snapNearest(
   return best;
 }
 
+export function snapToAxisValue(
+  axis: number[],
+  value: number,
+  transform: Transform = identity,
+): number {
+  return axis[snapNearest(axis, value, transform)];
+}
+
 // ---------------------------------------------------------------------------
 // Time-series extraction.
 // ---------------------------------------------------------------------------
