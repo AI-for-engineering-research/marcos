@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Line,
   LineChart,
@@ -36,16 +39,16 @@ const MIXING_Y_MAX = 0.8; // hPa, matches plotting.py:471
 const PLOT_HEIGHT_PX = 280;
 
 const ICE_TRACES: { name: string; varName: string; color: string; dashed?: boolean }[] = [
-  // Convention: same hue per aerosol mode, ice variant = dashed.
-  // Colors chosen to be readable on both light and dark backgrounds
-  // (replace the previous black / darkblue / gray which disappeared on dark theme).
-  { name: "Bare soot", varName: "total_soot_per_kgfuel", color: "#ef4444" },         // red-500
-  { name: "Sulfur aerosol", varName: "total_liquid_aerosol_per_kgfuel", color: "#3b82f6" }, // blue-500
-  { name: "Ambient aerosol", varName: "total_ambient_aerosol_per_kgfuel", color: "#f59e0b" }, // amber-500
   { name: "Soot ice", varName: "soot_ice_per_kgfuel", color: "#ef4444", dashed: true },
   { name: "Sulfur ice", varName: "sulfur_ice_per_kgfuel", color: "#3b82f6", dashed: true },
   { name: "Ambient ice", varName: "ambient_ice_per_kgfuel", color: "#f59e0b", dashed: true },
 ];
+
+const MODE_COLORS = {
+  soot: "#ef4444",
+  sulfur: "#3b82f6",
+  ambient: "#f59e0b",
+} as const;
 
 // Saturation curves are static; precompute once.
 const SAT_CURVE = (() => {
@@ -231,7 +234,35 @@ export function SensitivityDashboard() {
       return row;
     });
 
-    return { mixing, iceRows };
+    const i1s = t.reduce((best, tk, i) =>
+      Math.abs(tk - 1) < Math.abs(t[best] - 1) ? i : best,
+    0);
+    const soot1 = Math.max(0, Number(ice.soot_ice_per_kgfuel[i1s] ?? 0));
+    const sulfur1 = Math.max(0, Number(ice.sulfur_ice_per_kgfuel[i1s] ?? 0));
+    const ambient1 = Math.max(0, Number(ice.ambient_ice_per_kgfuel[i1s] ?? 0));
+    const total1 = soot1 + sulfur1 + ambient1;
+    const contributionRows = [
+      {
+        mode: "Soot",
+        fraction: total1 > 0 ? soot1 / total1 : 0,
+        percent: total1 > 0 ? (100 * soot1) / total1 : 0,
+        fill: MODE_COLORS.soot,
+      },
+      {
+        mode: "Sulfur",
+        fraction: total1 > 0 ? sulfur1 / total1 : 0,
+        percent: total1 > 0 ? (100 * sulfur1) / total1 : 0,
+        fill: MODE_COLORS.sulfur,
+      },
+      {
+        mode: "Ambient",
+        fraction: total1 > 0 ? ambient1 / total1 : 0,
+        percent: total1 > 0 ? (100 * ambient1) / total1 : 0,
+        fill: MODE_COLORS.ambient,
+      },
+    ];
+
+    return { mixing, iceRows, contributionRows };
   }, [data, sliders, mode]);
 
   if (error) {
@@ -475,8 +506,9 @@ export function SensitivityDashboard() {
             </div>
 
             <div>
-              <h4 className="mb-2 text-sm font-semibold tracking-tight">Particle / ice time series</h4>
-              <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
+              <h4 className="mb-2 text-sm font-semibold tracking-tight">Ice time series</h4>
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.9fr)] lg:items-start">
+                <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
             <LineChart data={charts.iceRows} margin={{ top: 12, right: 16, bottom: 32, left: 48 }}>
               <CartesianGrid stroke="rgba(127,127,127,0.25)" />
               <XAxis
@@ -534,7 +566,46 @@ export function SensitivityDashboard() {
                 />
               ))}
             </LineChart>
-              </ResponsiveContainer>
+                </ResponsiveContainer>
+
+                <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
+                  <BarChart data={charts.contributionRows} margin={{ top: 20, right: 12, bottom: 24, left: 8 }}>
+                    <CartesianGrid stroke="rgba(127,127,127,0.25)" vertical={false} />
+                    <XAxis
+                      dataKey="mode"
+                      tick={{ fontSize: 10 }}
+                      label={{
+                        value: "Mode",
+                        position: "insideBottom",
+                        offset: -12,
+                        style: { fontSize: 11, textAnchor: "middle" },
+                      }}
+                    />
+                    <YAxis
+                      domain={[0, 1]}
+                      ticks={[0, 0.25, 0.5, 0.75, 1]}
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(v: unknown) => `${Math.round(100 * Number(v))}%`}
+                      label={{
+                        value: "Fraction at 1 s",
+                        angle: -90,
+                        position: "insideLeft",
+                        offset: 0,
+                        style: { fontSize: 11, textAnchor: "middle" },
+                      }}
+                    />
+                    <Tooltip
+                      formatter={(v: unknown) => [`${(100 * Number(v)).toFixed(1)}%`, "Fraction"]}
+                      labelFormatter={(label: unknown) => `${String(label)} ice`}
+                    />
+                    <Bar dataKey="fraction" radius={[6, 6, 0, 0]}>
+                      {charts.contributionRows.map((row) => (
+                        <Cell key={row.mode} fill={row.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </ChartCard>
