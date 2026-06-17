@@ -32,7 +32,7 @@ const MIXING_X_MIN = 210;
 const MIXING_X_MAX = 260;
 const MIXING_Y_MIN = 0;
 const MIXING_Y_MAX = 0.8; // hPa, matches plotting.py:471
-const PLOT_HEIGHT_PX = 250;
+const PLOT_HEIGHT_PX = 260;
 
 const ICE_TRACES: { name: string; varName: string; color: string; dashed?: boolean }[] = [
   // Convention: same hue per aerosol mode, ice variant = dashed.
