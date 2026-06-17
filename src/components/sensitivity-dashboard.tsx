@@ -32,7 +32,7 @@ const MIXING_X_MIN = 210;
 const MIXING_X_MAX = 260;
 const MIXING_Y_MIN = 0;
 const MIXING_Y_MAX = 0.8; // hPa, matches plotting.py:471
-const PLOT_HEIGHT_PX = 230;
+const PLOT_HEIGHT_PX = 250;
 
 const ICE_TRACES: { name: string; varName: string; color: string; dashed?: boolean }[] = [
   // Convention: same hue per aerosol mode, ice variant = dashed.
@@ -360,8 +360,8 @@ export function SensitivityDashboard() {
           </div>
         </div>
 
-        <ChartCard title="Interactive outputs" className="h-full">
-          <div className="grid h-full gap-5">
+        <ChartCard className="h-full">
+          <div className="grid h-full gap-3">
             <div>
               <h4 className="mb-2 text-sm font-semibold tracking-tight">Mixing line</h4>
               <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
@@ -625,14 +625,14 @@ function ChartCard({
   children,
   className = "",
 }: {
-  title: string;
+  title?: string;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <div className={`rounded-3xl border border-black/8 bg-white/80 p-5 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 ${className}`}>
-      <h3 className="text-base font-semibold tracking-tight">{title}</h3>
-      <div className="mt-3">{children}</div>
+      {title ? <h3 className="text-base font-semibold tracking-tight">{title}</h3> : null}
+      <div className={title ? "mt-3" : ""}>{children}</div>
     </div>
   );
 }
