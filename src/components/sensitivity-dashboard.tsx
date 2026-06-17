@@ -114,6 +114,13 @@ function formatPow10(v: number): string {
   return `10${toSuperscript(e)}`;
 }
 
+function fmtCompact(x: number): string {
+  if (!Number.isFinite(x)) return "";
+  if (Math.abs(x) >= 100) return Math.round(x).toString();
+  if (Math.abs(x) >= 10) return x.toFixed(1).replace(/\.0$/, "");
+  return x.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -250,39 +257,69 @@ export function SensitivityDashboard() {
         eyebrow="Sensitivity"
         title="Interactive parameter sweep"
         description="Move the sliders to explore how the early-plume mixing line and the ice / aerosol time series respond to engine exhaust and ambient conditions."
-      />
+      >
+        <div className="rounded-2xl bg-[var(--surface)] p-4 text-sm">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+              Lookup mode
+            </p>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="mode"
+                checked={mode === "interp"}
+                onChange={() => setMode("interp")}
+              />
+              <span>Interpolate</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="mode"
+                checked={mode === "snap"}
+                onChange={() => setMode("snap")}
+              />
+              <span>Snap</span>
+            </label>
+          </div>
+          <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
+            Interpolation is multilinear in log10(FSC), log10(EI soot), T<sub>amb</sub>, and N₀.
+            Use “snap” to read raw pyEPM solves at the marked grid points.
+          </p>
+        </div>
+      </Section>
 
-      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-start">
         <div className="lg:sticky lg:top-24">
           <div className="flex flex-col gap-4 rounded-3xl border border-black/8 bg-white/80 p-5 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5">
             <div className="grid gap-4">
               <SliderRow
                 label="FSC"
                 units="ppm"
-                valueLabel={sliders.fsc.toFixed(1)}
+                valueLabel={fmtCompact(sliders.fsc)}
                 sliderUnit={valueToLogSlider(sliders.fsc, ranges.fsc)}
                 onSliderUnit={(u) =>
                   setSliders((s) => ({ ...s, fsc: logSliderToValue(u, ranges.fsc) }))
                 }
-                rangeLabel={`${ranges.fsc.min} – ${ranges.fsc.max} (log)`}
                 rangeMin={ranges.fsc.min}
                 rangeMax={ranges.fsc.max}
                 gridValues={m.axes.fsc_ppm}
                 logScale
+                endpointFormatter={fmtCompact}
               />
               <SliderRow
                 label="EI soot"
                 units="# / kg-fuel"
-                valueLabel={fmtSci(sliders.soot)}
+                valueLabel={formatPow10(sliders.soot)}
                 sliderUnit={valueToLogSlider(sliders.soot, ranges.soot)}
                 onSliderUnit={(u) =>
                   setSliders((s) => ({ ...s, soot: logSliderToValue(u, ranges.soot) }))
                 }
-                rangeLabel={`${fmtSci(ranges.soot.min)} – ${fmtSci(ranges.soot.max)} (log)`}
                 rangeMin={ranges.soot.min}
                 rangeMax={ranges.soot.max}
                 gridValues={m.axes.soot_per_kgfuel}
                 logScale
+                endpointFormatter={formatPow10}
               />
               <SliderRow
                 label="Ambient temperature"
@@ -292,10 +329,10 @@ export function SensitivityDashboard() {
                 onSliderUnit={(u) =>
                   setSliders((s) => ({ ...s, tAmb: linSliderToValue(u, ranges.tAmb) }))
                 }
-                rangeLabel={`${ranges.tAmb.min} – ${ranges.tAmb.max} K`}
                 rangeMin={ranges.tAmb.min}
                 rangeMax={ranges.tAmb.max}
                 gridValues={m.axes.temperature_amb_K}
+                endpointFormatter={(v) => fmtCompact(v)}
               />
               <SliderRow
                 label="Initial dilution N₀"
@@ -305,41 +342,11 @@ export function SensitivityDashboard() {
                 onSliderUnit={(u) =>
                   setSliders((s) => ({ ...s, n0: linSliderToValue(u, ranges.n0) }))
                 }
-                rangeLabel={`${ranges.n0.min} – ${ranges.n0.max}`}
                 rangeMin={ranges.n0.min}
                 rangeMax={ranges.n0.max}
                 gridValues={m.axes.n0_kg_air_per_kg_fuel}
+                endpointFormatter={(v) => fmtCompact(v)}
               />
-            </div>
-
-            <div className="rounded-2xl bg-[var(--surface)] p-4 text-sm">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-                  Lookup mode
-                </p>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === "interp"}
-                    onChange={() => setMode("interp")}
-                  />
-                  <span>Interpolate</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === "snap"}
-                    onChange={() => setMode("snap")}
-                  />
-                  <span>Snap</span>
-                </label>
-              </div>
-              <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
-                Interpolation is multilinear in log10(FSC), log10(EI soot), T<sub>amb</sub>, and N₀.
-                Use “snap” to read raw pyEPM solves at the marked grid points.
-              </p>
             </div>
           </div>
         </div>
@@ -538,9 +545,9 @@ function SliderRow({
   onSliderUnit,
   rangeMin,
   rangeMax,
-  rangeLabel,
   gridValues,
   logScale = false,
+  endpointFormatter,
 }: {
   label: string;
   units: string;
@@ -549,12 +556,10 @@ function SliderRow({
   onSliderUnit: (u: number) => void;
   rangeMin: number;
   rangeMax: number;
-  rangeLabel: string;
   gridValues: number[];
   logScale?: boolean;
+  endpointFormatter: (v: number) => string;
 }) {
-  void rangeMin;
-  void rangeMax;
   return (
     <div className="rounded-2xl bg-[var(--surface)] p-5">
       <div className="flex items-baseline justify-between">
@@ -594,8 +599,9 @@ function SliderRow({
           );
         })}
       </div>
-      <div className="mt-2 text-xs text-[var(--muted)]">
-        <span>{rangeLabel}</span>
+      <div className="mt-2 flex items-start justify-between text-xs text-[var(--muted)]">
+        <span className="max-w-[40%] text-left">{endpointFormatter(rangeMin)}</span>
+        <span className="max-w-[40%] text-right">{endpointFormatter(rangeMax)}</span>
       </div>
     </div>
   );
