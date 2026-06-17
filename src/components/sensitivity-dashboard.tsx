@@ -32,8 +32,7 @@ const MIXING_X_MIN = 210;
 const MIXING_X_MAX = 260;
 const MIXING_Y_MIN = 0;
 const MIXING_Y_MAX = 0.8; // hPa, matches plotting.py:471
-const SLIDER_THUMB_RADIUS_PX = 11;
-const PLOT_HEIGHT_PX = 300;
+const PLOT_HEIGHT_PX = 230;
 
 const ICE_TRACES: { name: string; varName: string; color: string; dashed?: boolean }[] = [
   // Convention: same hue per aerosol mode, ice variant = dashed.
@@ -114,6 +113,14 @@ function formatPow10(v: number): string {
   if (!Number.isFinite(v) || v <= 0) return "";
   const e = Math.round(Math.log10(v));
   return `10${toSuperscript(e)}`;
+}
+
+/** Format as a coefficient times a power of ten, e.g. 1.50 × 10¹⁴. */
+function formatSciSup(v: number): string {
+  if (!Number.isFinite(v) || v === 0) return "0";
+  const e = Math.floor(Math.log10(Math.abs(v)));
+  const m = v / Math.pow(10, e);
+  return `${m.toFixed(2)} × 10${toSuperscript(e)}`;
 }
 
 function fmtCompact(x: number): string {
@@ -312,7 +319,7 @@ export function SensitivityDashboard() {
               <SliderRow
                 label="EI soot"
                 units="# / kg-fuel"
-                valueLabel={formatPow10(sliders.soot)}
+                valueLabel={formatSciSup(sliders.soot)}
                 sliderUnit={valueToLogSlider(sliders.soot, ranges.soot)}
                 onSliderUnit={(u) =>
                   setSliders((s) => ({ ...s, soot: logSliderToValue(u, ranges.soot) }))
@@ -353,9 +360,11 @@ export function SensitivityDashboard() {
           </div>
         </div>
 
-        <div className="grid gap-6">
-          <ChartCard title="Mixing line">
-          <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
+        <ChartCard title="Interactive outputs" className="h-full">
+          <div className="grid h-full gap-5">
+            <div>
+              <h4 className="mb-2 text-sm font-semibold tracking-tight">Mixing line</h4>
+              <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
             <LineChart margin={{ top: 12, right: 16, bottom: 32, left: 48 }}>
               <CartesianGrid stroke="rgba(127,127,127,0.25)" />
               <XAxis
@@ -425,11 +434,12 @@ export function SensitivityDashboard() {
                 xAxisId={0}
               />
             </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
+              </ResponsiveContainer>
+            </div>
 
-        <ChartCard title="Particle / ice time series">
-          <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
+            <div>
+              <h4 className="mb-2 text-sm font-semibold tracking-tight">Particle / ice time series</h4>
+              <ResponsiveContainer width="100%" height={PLOT_HEIGHT_PX}>
             <LineChart data={charts.iceRows} margin={{ top: 12, right: 16, bottom: 32, left: 48 }}>
               <CartesianGrid stroke="rgba(127,127,127,0.25)" />
               <XAxis
@@ -487,9 +497,10 @@ export function SensitivityDashboard() {
                 />
               ))}
             </LineChart>
-          </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </ChartCard>
-        </div>
       </div>
 
       <Section eyebrow="Provenance" title="Frozen parameters and sweep manifest">
@@ -601,10 +612,7 @@ function SliderRow({
           );
         })}
       </div>
-      <div
-        className="mt-2 flex items-start justify-between text-xs text-[var(--muted)]"
-        style={{ paddingLeft: `${SLIDER_THUMB_RADIUS_PX}px`, paddingRight: `${SLIDER_THUMB_RADIUS_PX}px` }}
-      >
+      <div className="mt-2 flex items-start justify-between text-xs text-[var(--muted)]">
         <span className="max-w-[40%] text-left">{endpointFormatter(rangeMin)}</span>
         <span className="max-w-[40%] text-right">{endpointFormatter(rangeMax)}</span>
       </div>
@@ -615,12 +623,14 @@ function SliderRow({
 function ChartCard({
   title,
   children,
+  className = "",
 }: {
   title: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="rounded-3xl border border-black/8 bg-white/80 p-5 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5">
+    <div className={`rounded-3xl border border-black/8 bg-white/80 p-5 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 ${className}`}>
       <h3 className="text-base font-semibold tracking-tight">{title}</h3>
       <div className="mt-3">{children}</div>
     </div>
