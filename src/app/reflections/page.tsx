@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Section } from "@/components/section";
+import { withBasePath } from "@/lib/base-path";
 
 const reflections = [
   {
@@ -36,7 +37,7 @@ const reflections = [
       "While playing around with the sliders, I noticed that the temperature interpolation was doing something odd. The agent used multilinear interpolation to develop the lookup table. It seems that this approach is not good for the temperature slider because the nucleation timescale shifts significantly, and the interpolation struggles to capture that with the low resolution I provided.",
     ],
     image: {
-      src: "/fix-interpolation.png",
+      src: withBasePath("/fix-interpolation.png"),
       alt: "Plot showing interpolation issues in the temperature sensitivity results",
     },
   },
