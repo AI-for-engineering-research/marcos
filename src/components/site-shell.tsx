@@ -9,7 +9,7 @@ const navItems = [
   { href: "/flowchart", label: "Flowchart" },
   { href: "/sensitivity", label: "Sensitivity" },
   { href: "/about", label: "About" },
-  { href: "/updates", label: "Research Logs" },
+  { href: "/reflections", label: "Reflections" },
 ];
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
