@@ -1,4 +1,4 @@
-# Reflections and comments for Week 1 (June 8 - 12)
+# Reflections for Week 1 (June 8 - 12)
 
 - First log for summer AI engineering research pilot.
 - On our first session it was mentioned to not use Pi agent on hex. I made a clone of my pyEPM repo locally on the computer to use the agent on.

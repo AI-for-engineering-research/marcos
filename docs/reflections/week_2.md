@@ -1,4 +1,4 @@
-# Reflections and comments for Week 2 (June 15 - 18)
+# Reflections for Week 2 (June 15 - 18)
 
 - I am starting to use the Pi agent for my actual work now.
 - On my research code repo for pyEPM, I added an AGENTS.md file for the context of that work. I'll be using Pi as a "computational physics" coworker.
