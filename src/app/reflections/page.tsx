@@ -9,6 +9,7 @@ type FigureData = {
   src: string;
   alt: string;
   label: string;
+  maxWidth?: string;
 };
 
 type ReflectionEntry = {
@@ -34,6 +35,7 @@ const reflections: ReflectionEntry[] = [
           src: withBasePath("/reflections/week4-laddering-bin-comparison.png"),
           alt: "Karcher Fig. 3 comparison against Yu et al. (2024) showing a laddering effect from reduced bin resolution",
           label: "View laddering comparison figure",
+          maxWidth: "max-w-2xl",
         },
       },
       "I initially planned to stick with this implementation of the IMN. I got stubborn and went ahead and implemented the latest version of the model, following the new thermodynamics approach from Yu et al. (2024).",
@@ -191,7 +193,10 @@ export default function ReflectionsPage() {
 
       {activeFigure ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-6" role="dialog" aria-modal="true">
-          <div className="relative max-h-[90vh] w-full max-w-5xl overflow-auto rounded-3xl bg-[var(--surface)] p-5 shadow-2xl">
+          <div
+            className={`relative max-h-[90vh] w-full overflow-auto rounded-3xl bg-[var(--surface)] p-5 shadow-2xl ${activeFigure.maxWidth ?? "max-w-5xl"}`}
+          >
+
             <button
               type="button"
               onClick={() => setActiveFigure(null)}
