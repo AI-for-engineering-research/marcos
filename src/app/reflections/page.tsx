@@ -23,6 +23,34 @@ type ReflectionEntry = {
 
 const reflections: ReflectionEntry[] = [
   {
+    week: "Week 4",
+    date: "June 29–July 3",
+    bullets: [
+      "Using the now-predicted distributions from the ion-mediated nucleation (IMN) model, I am going ahead and running a comparison with Yu's ACM results from 2024, based on ECLIF campaign fuel and engine conditions.",
+      "The agent helped me extract only the data I needed from Hex to analyze locally, developing a quick script to run there. My runs are getting quite heavy now, so this was useful.",
+      {
+        text: "Results look qualitatively good. I noticed I had inadvertently reduced the number of bins in the volatile distribution, and my results show a \"laddering\" effect.",
+        figure: {
+          src: withBasePath("/reflections/week4-laddering-bin-comparison.png"),
+          alt: "Karcher Fig. 3 comparison against Yu et al. (2024) showing a laddering effect from reduced bin resolution",
+          label: "View laddering comparison figure",
+        },
+      },
+      "I initially planned to stick with this implementation of the IMN. I got stubborn and went ahead and implemented the latest version of the model, following the new thermodynamics approach from Yu et al. (2024).",
+      "The agent helped extract data from relevant sources, implement and couple the model, and kept the codebase consistent, re-running the test suite after every new implementation.",
+      "The older IMN model was kept as a separate mode I can still run pyEPM in.",
+      {
+        text: "A decomposition analysis, separating neutral from charged volatile clusters, showed that the neutral pathway was unphysically dominating the charged path. We expect bimodal distributions from these runs.",
+        figure: {
+          src: withBasePath("/reflections/week4-neutral-charged-decomposition.png"),
+          alt: "Decomposition of neutral versus charged volatile cluster pathways",
+          label: "View decomposition figure",
+        },
+      },
+      "I initially thought I needed more data, but a re-read of Yu (2018) showed a useful interpolation that wasn't caught by the agent. This could be critical.",
+    ],
+  },
+  {
     week: "Week 3",
     date: "June 22–27",
     bullets: [
