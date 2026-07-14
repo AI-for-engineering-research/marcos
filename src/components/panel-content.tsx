@@ -11,7 +11,7 @@ import { about, research, updates } from "@/lib/site-content";
 export function HomePanel() {
   return (
     <div className="flex flex-col gap-16 sm:gap-20">
-      <section className="grid min-h-[calc(100vh-11rem)] items-center gap-10 border-b editorial-rule pb-14 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid min-h-[calc(100vh-11rem)] items-center gap-10 border-b editorial-rule pb-14 lg:grid-cols-[1.05fr_0.75fr]">
         <div className="max-w-4xl">
           <p className="text-[0.72rem] font-medium uppercase tracking-[0.32em] text-[var(--accent)]">
             AI-assisted engineering research portfolio
@@ -42,25 +42,23 @@ export function HomePanel() {
           </div>
         </div>
 
-        <div className="relative">
-          <div className="aspect-[4/5] overflow-hidden bg-[var(--surface-soft)]">
-            <Image
-              src={withBasePath("/contrail-formation.png")}
-              alt="Contrail formation diagram"
-              width={1600}
-              height={1200}
-              priority
-              unoptimized
-              className="h-full w-full object-cover opacity-90 mix-blend-multiply dark:mix-blend-normal"
-            />
+        <aside className="border bg-[var(--surface-soft)] p-6 editorial-rule sm:p-8">
+          <p className="text-[0.7rem] font-medium uppercase tracking-[0.26em] text-[var(--accent)]">
+            Research focus
+          </p>
+          <div className="mt-8 space-y-6">
+            {[
+              ["Exhaust", "Fuel sulfur content, soot emissions, water vapor, and initial dilution."],
+              ["Plume", "Cooling, entrainment, supersaturation, aerosol activation, and ice growth."],
+              ["Climate", "Sensitivity of ice number and radiative forcing to engine and ambient conditions."],
+            ].map(([title, text]) => (
+              <div key={title} className="border-t pt-5 editorial-rule">
+                <h2 className="text-xl font-medium tracking-[-0.03em] text-[var(--accent-deep)]">{title}</h2>
+                <p className="mt-2 leading-7 text-[var(--muted)]">{text}</p>
+              </div>
+            ))}
           </div>
-          <div className="absolute -bottom-8 -left-8 hidden w-56 border bg-[color:var(--surface)]/90 p-5 backdrop-blur editorial-rule sm:block">
-            <p className="text-[0.65rem] uppercase tracking-[0.24em] text-[var(--accent)]">Focus</p>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-              Early plume aerosol activation, ice growth, and climate response under changing fuel and engine conditions.
-            </p>
-          </div>
-        </div>
+        </aside>
       </section>
 
       <section className="grid gap-8 border-b pb-16 editorial-rule lg:grid-cols-3">

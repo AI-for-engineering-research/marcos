@@ -304,7 +304,7 @@ const groupedPhases = ["Inputs", "Initialization", "Plume dynamics", "Microphysi
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full bg-[color:var(--accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--accent)] ring-1 ring-[color:var(--accent)]/20">
+    <span className="rounded-full bg-[#e8f2fb] px-3 py-1 text-xs font-semibold text-[var(--accent-deep)] ring-1 ring-[var(--line)]">
       {children}
     </span>
   );
@@ -313,7 +313,7 @@ function Pill({ children }: { children: React.ReactNode }) {
 function DetailList({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--foreground)]">{title}</h3>
+      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--accent-deep)]">{title}</h3>
       <ul className="mt-3 space-y-2 text-sm leading-7 text-[var(--muted)]">
         {items.map((item) => (
           <li key={item} className="flex gap-2">
@@ -335,7 +335,7 @@ function EquationBlock({ equation }: { equation: string }) {
 
   return (
     <div
-      className="overflow-x-auto rounded-xl bg-black/[0.03] px-4 py-4 text-[var(--foreground)] dark:bg-white/[0.06] [&_.katex-display]:my-0 [&_.katex]:text-[1.03rem]"
+      className="overflow-x-auto rounded-xl border bg-white px-4 py-4 text-[var(--foreground)] editorial-rule [&_.katex-display]:my-0 [&_.katex]:text-[1.03rem]"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -353,10 +353,10 @@ export function PyepmFlowchart() {
 
   return (
     <div className="flex flex-col gap-8">
-      <section className="rounded-3xl bg-[linear-gradient(135deg,#eff6ff_0%,#f8fafc_52%,#eef2ff_100%)] p-8 ring-1 ring-black/5 dark:bg-[linear-gradient(135deg,#0f172a_0%,#111827_52%,#1e1b4b_100%)] dark:ring-white/10 lg:p-10">
+      <section className="border-b bg-white pb-8 editorial-rule lg:pb-10">
         <div className="max-w-4xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">Interactive model map</p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h1 className="mt-4 text-4xl font-medium tracking-[-0.05em] text-[var(--accent-deep)] sm:text-5xl">
             Coupled physics flowchart for pyEPM early-plume microphysics
           </h1>
           <p className="mt-4 max-w-3xl leading-8 text-[var(--muted)]">
@@ -371,10 +371,10 @@ export function PyepmFlowchart() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="max-h-[75vh] overflow-y-auto rounded-3xl border border-black/8 bg-white/80 p-4 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 sm:p-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)]">
+        <div className="max-h-[75vh] overflow-y-auto border bg-white p-4 editorial-rule sm:p-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)]">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold">Step-by-step flow</h2>
+              <h2 className="text-xl font-semibold text-[var(--accent-deep)]">Step-by-step flow</h2>
               <p className="mt-1 text-sm text-[var(--muted)]">Select a node to inspect equations, parameters, and outputs.</p>
             </div>
             <div className="text-sm font-semibold text-[var(--accent)]">{activeIndex + 1}/{flowSteps.length}</div>
@@ -390,8 +390,8 @@ export function PyepmFlowchart() {
                   onClick={() => setActiveId(step.id)}
                   className={`relative z-10 flex w-full gap-4 rounded-2xl border p-4 text-left transition ${
                     isActive
-                      ? "border-[color:var(--accent)]/50 bg-[color:var(--accent)]/10 shadow-sm"
-                      : "border-black/8 bg-[var(--surface)] hover:border-[color:var(--accent)]/30 hover:bg-[color:var(--accent)]/5 dark:border-white/10"
+                      ? "border-[var(--accent)] bg-[#e8f2fb]"
+                      : "border-[var(--line)] bg-white hover:border-[var(--accent)] hover:bg-[var(--surface-soft)]"
                   }`}
                   aria-pressed={isActive}
                 >
@@ -413,7 +413,7 @@ export function PyepmFlowchart() {
           </div>
         </div>
 
-        <article className="rounded-3xl border border-black/8 bg-white/90 p-6 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 sm:p-8">
+        <article className="border bg-white p-6 editorial-rule sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <Pill>{activeStep.phase}</Pill>
@@ -424,7 +424,7 @@ export function PyepmFlowchart() {
               <button
                 type="button"
                 onClick={() => setActiveId(flowSteps[Math.max(activeIndex - 1, 0)].id)}
-                className="rounded-full border border-black/10 px-4 py-2 text-sm font-medium transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:hover:bg-white/10"
+                className="rounded-full border border-[var(--line)] px-4 py-2 text-sm font-medium text-[var(--accent-deep)] transition hover:bg-[var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-40"
                 disabled={activeIndex === 0}
               >
                 Previous
@@ -432,7 +432,7 @@ export function PyepmFlowchart() {
               <button
                 type="button"
                 onClick={() => setActiveId(flowSteps[Math.min(activeIndex + 1, flowSteps.length - 1)].id)}
-                className="rounded-full bg-[var(--foreground)] px-4 py-2 text-sm font-medium text-[var(--background)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-full bg-[var(--accent-deep)] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                 disabled={activeIndex === flowSteps.length - 1}
               >
                 Next
@@ -441,7 +441,7 @@ export function PyepmFlowchart() {
           </div>
 
           <div className="mt-7 grid gap-6">
-            <div className="rounded-2xl bg-[var(--surface)] p-5 ring-1 ring-black/5 dark:ring-white/10">
+            <div className="border bg-[var(--surface-soft)] p-5 editorial-rule">
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em]">Relevant equations</h3>
               <div className="mt-3 space-y-2">
                 {activeStep.equations.map((eq) => (
@@ -464,7 +464,7 @@ export function PyepmFlowchart() {
               <h3 className="text-sm font-semibold uppercase tracking-[0.18em]">Code trace</h3>
               <div className="mt-3 flex flex-wrap gap-2">
                 {activeStep.code.map((item) => (
-                  <code key={item} className="rounded-full bg-black/[0.04] px-3 py-1.5 text-xs text-[var(--muted)] dark:bg-white/[0.08]">
+                  <code key={item} className="rounded-full bg-[var(--surface-soft)] px-3 py-1.5 text-xs text-[var(--muted)] ring-1 ring-[var(--line)]">
                     {item}
                   </code>
                 ))}
@@ -474,23 +474,23 @@ export function PyepmFlowchart() {
         </article>
       </section>
 
-      <section className="rounded-3xl border border-black/8 bg-[var(--surface)] p-6 dark:border-white/10 sm:p-8">
+      <section className="border bg-white p-6 editorial-rule sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">Scientific endpoint</p>
         <h2 className="mt-3 text-2xl font-semibold">What should be interpreted from pyEPM?</h2>
         <div className="mt-5 grid gap-5 lg:grid-cols-3">
-          <div className="rounded-2xl bg-black/[0.03] p-5 dark:bg-white/[0.05]">
+          <div className="border bg-[var(--surface-soft)] p-5 editorial-rule">
             <h3 className="font-semibold">Ice number</h3>
             <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
               The primary output is total_ice_per_kgfuel, with separate soot-, sulfur-, and ambient-origin contributions. This is the most direct link to engine exhaust parameters.
             </p>
           </div>
-          <div className="rounded-2xl bg-black/[0.03] p-5 dark:bg-white/[0.05]">
+          <div className="border bg-[var(--surface-soft)] p-5 editorial-rule">
             <h3 className="font-semibold">Ice size distribution</h3>
             <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
               The ice_pdf on the ice radius grid controls optical-depth-relevant quantities and provides the handoff to downstream contrail evolution models.
             </p>
           </div>
-          <div className="rounded-2xl bg-black/[0.03] p-5 dark:bg-white/[0.05]">
+          <div className="border bg-[var(--surface-soft)] p-5 editorial-rule">
             <h3 className="font-semibold">Traceability</h3>
             <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
               Any claim about FSC or soot EI must be traced through sulfur aerosol growth, soot coating, activation, supersaturation, freezing, and final ice number/size.

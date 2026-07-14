@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f9ff;
-  --foreground: #08223a;
-  --surface: #fbfdff;
-  --surface-soft: #e7f4ff;
-  --muted: #52708a;
-  --accent: #1e74c9;
-  --accent-deep: #073b6d;
-  --line: rgba(8, 34, 58, 0.14);
+  --background: #ffffff;
+  --foreground: #0b253a;
+  --surface: #ffffff;
+  --surface-soft: #f1f7fc;
+  --muted: #4d667a;
+  --accent: #1f6fb2;
+  --accent-deep: #0b3a63;
+  --line: #d8e3ec;
 }
 
 @theme inline {
@@ -20,14 +20,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #081827;
-    --foreground: #edf7ff;
-    --surface: #0d2235;
-    --surface-soft: #12304a;
-    --muted: #a8c2d7;
-    --accent: #8dc8ff;
-    --accent-deep: #d7efff;
-    --line: rgba(237, 247, 255, 0.16);
+    --background: #ffffff;
+    --foreground: #0b253a;
+    --surface: #ffffff;
+    --surface-soft: #f1f7fc;
+    --muted: #4d667a;
+    --accent: #1f6fb2;
+    --accent-deep: #0b3a63;
+    --line: #d8e3ec;
   }
 }
 
@@ -43,9 +43,7 @@ html {
 
 body {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 20% 0%, rgba(125, 197, 255, 0.28), transparent 34rem),
-    linear-gradient(180deg, #f7fbff 0%, var(--background) 52%, #edf7ff 100%);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
@@ -55,11 +53,7 @@ body {
 }
 
 .subtle-grid {
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: linear-gradient(to bottom, black, transparent 72%);
+  display: none;
 }
 
 .editorial-rule {
