@@ -48,20 +48,20 @@ export function MethodScrollytelling() {
   }, [scrollYProgress]);
 
   return (
-    <section ref={containerRef} className="relative h-[260vh] rounded-3xl bg-[var(--surface)]">
-      <div className="sticky top-24 grid gap-8 rounded-3xl bg-[var(--surface)] p-6 lg:grid-cols-[0.78fr_1.22fr] lg:p-8">
+    <section ref={containerRef} className="relative h-[260vh] border-t bg-[color:var(--surface)]/58 editorial-rule">
+      <div className="sticky top-24 grid gap-8 py-8 lg:grid-cols-[0.34fr_1fr] lg:py-10">
         <div className="space-y-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">
+          <p className="text-[0.7rem] font-medium uppercase tracking-[0.28em] text-[var(--accent)]">
             Method
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Approach</h2>
+          <h2 className="text-3xl font-medium tracking-[-0.04em] text-[var(--accent-deep)] sm:text-4xl">Approach</h2>
           <div className="space-y-4">
             {steps.map((step, index) => (
               <p
                 key={step.title}
                 className={`leading-8 transition-all duration-300 ${
                   activeStep === index
-                    ? "font-bold text-[var(--foreground)]"
+                    ? "font-semibold text-[var(--accent-deep)]"
                     : "font-normal text-[var(--muted)]"
                 }`}
               >
@@ -71,31 +71,31 @@ export function MethodScrollytelling() {
           </div>
         </div>
 
-        <div className="relative min-h-[460px] overflow-hidden rounded-3xl border border-black/8 bg-[#edf3fb] p-4 dark:border-white/10 dark:bg-white/6 sm:p-6">
+        <div className="relative min-h-[460px] overflow-hidden border bg-[var(--surface-soft)] p-4 editorial-rule sm:p-6">
           <motion.div
             initial={false}
             animate={{ opacity: activeStep === 0 ? 1 : 0, y: activeStep === 0 ? 0 : -8 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
             className="absolute inset-4 grid gap-4 sm:grid-cols-2 sm:inset-6"
           >
-            <div className="overflow-hidden rounded-2xl bg-white/70 p-3 backdrop-blur-sm">
+            <div className="overflow-hidden bg-white/70 p-3 backdrop-blur-sm">
               <Image
                 src={steps[0].visuals[0].src}
                 alt={steps[0].visuals[0].alt}
                 width={1200}
                 height={900}
                 unoptimized
-                className="h-full w-full rounded-xl object-contain"
+                className="h-full w-full object-contain"
               />
             </div>
-            <div className="overflow-hidden rounded-2xl bg-white/70 p-3 backdrop-blur-sm">
+            <div className="overflow-hidden bg-white/70 p-3 backdrop-blur-sm">
               <Image
                 src={steps[0].visuals[1].src}
                 alt={steps[0].visuals[1].alt}
                 width={1200}
                 height={900}
                 unoptimized
-                className="h-full w-full rounded-xl object-contain"
+                className="h-full w-full object-contain"
               />
             </div>
           </motion.div>
@@ -106,14 +106,14 @@ export function MethodScrollytelling() {
             transition={{ duration: 0.35, ease: "easeOut" }}
             className="absolute inset-4 sm:inset-6"
           >
-            <div className="flex h-full items-center justify-center overflow-hidden rounded-2xl bg-white/72 p-4 backdrop-blur-sm">
+            <div className="flex h-full items-center justify-center overflow-hidden bg-white/72 p-4 backdrop-blur-sm">
               <Image
                 src={steps[1].visuals[0].src}
                 alt={steps[1].visuals[0].alt}
                 width={1400}
                 height={1000}
                 unoptimized
-                className="h-full w-full rounded-xl object-contain"
+                className="h-full w-full object-contain"
               />
             </div>
           </motion.div>
@@ -124,14 +124,14 @@ export function MethodScrollytelling() {
             transition={{ duration: 0.35, ease: "easeOut" }}
             className="absolute inset-4 sm:inset-6"
           >
-            <div className="flex h-full items-center justify-center overflow-hidden rounded-2xl bg-white/72 p-4 backdrop-blur-sm">
+            <div className="flex h-full items-center justify-center overflow-hidden bg-white/72 p-4 backdrop-blur-sm">
               <Image
                 src={steps[2].visuals[0].src}
                 alt={steps[2].visuals[0].alt}
                 width={1400}
                 height={1000}
                 unoptimized
-                className="h-full w-full rounded-xl object-contain"
+                className="h-full w-full object-contain"
               />
             </div>
           </motion.div>

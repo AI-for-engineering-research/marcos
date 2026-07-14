@@ -10,21 +10,25 @@ export function Section({
   children?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-black/8 bg-white/80 p-6 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 sm:p-8">
-      <div className="max-w-3xl">
-        {eyebrow ? (
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
-        {description ? (
-          <p className="mt-4 text-base leading-8 text-[var(--muted)] sm:text-lg">
-            {description}
-          </p>
-        ) : null}
+    <section className="border-t bg-[color:var(--surface)]/58 px-0 py-8 editorial-rule sm:py-10">
+      <div className="grid gap-6 lg:grid-cols-[0.34fr_1fr]">
+        <div>
+          {eyebrow ? (
+            <p className="text-[0.7rem] font-medium uppercase tracking-[0.28em] text-[var(--accent)]">
+              {eyebrow}
+            </p>
+          ) : null}
+        </div>
+        <div className="max-w-4xl">
+          {title ? <h2 className="text-3xl font-medium tracking-[-0.04em] text-[var(--accent-deep)] sm:text-4xl">{title}</h2> : null}
+          {description ? (
+            <p className="mt-5 max-w-3xl text-base leading-8 text-[var(--muted)] sm:text-lg">
+              {description}
+            </p>
+          ) : null}
+          {children ? <div className="mt-7">{children}</div> : null}
+        </div>
       </div>
-      {children ? <div className="mt-6">{children}</div> : null}
     </section>
   );
 }
