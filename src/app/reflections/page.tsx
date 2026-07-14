@@ -15,6 +15,8 @@ type FigureData = {
 type ReflectionEntry = {
   week: string;
   date: string;
+  title: string;
+  summary: string;
   bullets: Array<string | { text: string; figure: FigureData }>;
   image?: {
     src: string;
@@ -26,6 +28,8 @@ const reflections: ReflectionEntry[] = [
   {
     week: "Week 4",
     date: "June 29–July 3",
+    title: "IMN validation and Yu et al. comparisons",
+    summary: "Comparing predicted volatile distributions against Yu et al. (2024), diagnosing bin-resolution artifacts, and updating the IMN implementation.",
     bullets: [
       "Using the now-predicted distributions from the ion-mediated nucleation (IMN) model, I am going ahead and running a comparison with Yu's ACM results from 2024, based on ECLIF campaign fuel and engine conditions.",
       "The agent helped me extract only the data I needed from Hex to analyze locally, developing a quick script to run there. My runs are getting quite heavy now, so this was useful.",
@@ -55,6 +59,8 @@ const reflections: ReflectionEntry[] = [
   {
     week: "Week 3",
     date: "June 22–27",
+    title: "Building and accelerating ion-mediated nucleation",
+    summary: "Moving from prescribed volatile aerosols toward a standalone and coupled IMN model, with calibration against published thermodynamic trajectories.",
     bullets: [
       "I am moving away a bit from working on the sensitivity visualization tool and started working on some lingering validation work for pyEPM.",
       "In particular, the test cases I have done until now assume a prescribed volatile aerosol distribution. While useful for sensitivity studies, this is not physically accurate. I am implementing a model to capture aerosol nucleation and growth given initial fuel sulfur content, ion emission index, and plume thermodynamic trajectory.",
@@ -90,6 +96,8 @@ const reflections: ReflectionEntry[] = [
   {
     week: "Week 2",
     date: "June 15–18",
+    title: "Flowchart and sensitivity dashboard",
+    summary: "Using the agent as a computational physics coworker to map pyEPM and prototype a precomputed sensitivity dashboard.",
     bullets: [
       "I am starting to use the Pi agent for my actual research work now.",
       "In my research code repo for pyEPM, I added an `AGENTS.md` file for the context of that work. I will be using Pi as a computational physics coworker.",
@@ -112,6 +120,8 @@ const reflections: ReflectionEntry[] = [
   {
     week: "Week 1",
     date: "June 8–12",
+    title: "Portfolio setup and first AI-assisted iteration",
+    summary: "Starting the summer pilot, setting up the portfolio site, refining content, and adding initial project/about interactions.",
     bullets: [
       "First log for the summer AI engineering research pilot.",
       "In our first session, it was mentioned that I should not use the Pi agent on Hex, so I cloned my pyEPM repo locally to use the agent there.",
@@ -129,35 +139,103 @@ const reflections: ReflectionEntry[] = [
 
 export default function ReflectionsPage() {
   const [activeFigure, setActiveFigure] = useState<FigureData | null>(null);
+  const [activeWeek, setActiveWeek] = useState<string | null>(null);
+  const activeReflection = reflections.find((entry) => entry.week === activeWeek) ?? null;
 
   return (
     <div className="flex flex-col gap-8">
       <Section
         eyebrow="Reflections"
         title="Weekly notes"
-        description="Personal reflections on using AI tools to support portfolio development and research work."
+        description="Personal reflections on using AI tools to support portfolio development and research work. Select a reflection to open the full entry."
       />
 
-      <div className="space-y-6">
-        {reflections.map((entry) => (
-          <article
-            key={entry.week}
-            className="rounded-3xl border border-black/8 bg-white/80 p-6 shadow-sm shadow-black/5 dark:border-white/10 dark:bg-white/5 sm:p-8"
+      <div className="border-b editorial-rule">
+        <div className="flex flex-wrap gap-2 pb-4">
+          <button
+            type="button"
+            onClick={() => setActiveWeek(null)}
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+              activeReflection === null
+                ? "border-[var(--accent-deep)] bg-[var(--accent-deep)] text-white"
+                : "border-[var(--line)] text-[var(--accent-deep)] hover:bg-[var(--surface-soft)]"
+            }`}
           >
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">
-                  {entry.week}
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight">Reflections and comments</h2>
-              </div>
-              <p className="text-sm text-[var(--muted)]">{entry.date}</p>
-            </div>
+            All reflections
+          </button>
+          {reflections.map((entry) => (
+            <button
+              key={entry.week}
+              type="button"
+              onClick={() => setActiveWeek(entry.week)}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+                activeReflection?.week === entry.week
+                  ? "border-[var(--accent-deep)] bg-[var(--accent-deep)] text-white"
+                  : "border-[var(--line)] text-[var(--accent-deep)] hover:bg-[var(--surface-soft)]"
+              }`}
+            >
+              {entry.week}
+            </button>
+          ))}
+        </div>
+      </div>
 
-            <ul className="mt-6 space-y-3 text-sm leading-7 text-[var(--muted)]">
-              {entry.bullets.map((bullet) => (
-                <li key={typeof bullet === "string" ? bullet : bullet.text}>
-                  • {typeof bullet === "string" ? (
+      {activeReflection === null ? (
+        <div className="grid gap-4">
+          {reflections.map((entry) => (
+            <button
+              key={entry.week}
+              type="button"
+              onClick={() => setActiveWeek(entry.week)}
+              className="group border bg-white p-6 text-left transition editorial-rule hover:border-[var(--accent)] hover:bg-[var(--surface-soft)] sm:p-7"
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">
+                    {entry.week}
+                  </p>
+                  <h2 className="mt-3 text-2xl font-medium tracking-[-0.04em] text-[var(--accent-deep)]">
+                    {entry.title}
+                  </h2>
+                  <p className="mt-3 max-w-3xl leading-7 text-[var(--muted)]">{entry.summary}</p>
+                </div>
+                <div className="shrink-0 text-sm text-[var(--muted)]">{entry.date}</div>
+              </div>
+              <span className="mt-5 inline-block text-sm font-medium text-[var(--accent)] underline-offset-4 group-hover:underline">
+                Read full reflection
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <article className="border bg-white p-6 editorial-rule sm:p-8">
+          <button
+            type="button"
+            onClick={() => setActiveWeek(null)}
+            className="mb-6 text-sm font-medium text-[var(--accent)] underline-offset-4 hover:underline"
+          >
+            ← Back to all reflections
+          </button>
+
+          <div className="flex flex-col gap-2 border-b pb-6 editorial-rule sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">
+                {activeReflection.week}
+              </p>
+              <h2 className="mt-3 text-3xl font-medium tracking-[-0.05em] text-[var(--accent-deep)] sm:text-4xl">
+                {activeReflection.title}
+              </h2>
+              <p className="mt-4 max-w-3xl leading-8 text-[var(--muted)]">{activeReflection.summary}</p>
+            </div>
+            <p className="shrink-0 text-sm text-[var(--muted)]">{activeReflection.date}</p>
+          </div>
+
+          <ul className="mt-7 space-y-4 text-sm leading-7 text-[var(--muted)]">
+            {activeReflection.bullets.map((bullet) => (
+              <li key={typeof bullet === "string" ? bullet : bullet.text} className="flex gap-3">
+                <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />
+                <span>
+                  {typeof bullet === "string" ? (
                     bullet
                   ) : (
                     <>
@@ -171,25 +249,25 @@ export default function ReflectionsPage() {
                       </button>
                     </>
                   )}
-                </li>
-              ))}
-            </ul>
+                </span>
+              </li>
+            ))}
+          </ul>
 
-            {entry.image ? (
-              <div className="mt-6 overflow-hidden rounded-2xl bg-[var(--surface)] p-4">
-                <Image
-                  src={entry.image.src}
-                  alt={entry.image.alt}
-                  width={1400}
-                  height={900}
-                  unoptimized
-                  className="h-auto w-full rounded-xl object-contain"
-                />
-              </div>
-            ) : null}
-          </article>
-        ))}
-      </div>
+          {activeReflection.image ? (
+            <div className="mt-8 overflow-hidden border bg-[var(--surface-soft)] p-4 editorial-rule">
+              <Image
+                src={activeReflection.image.src}
+                alt={activeReflection.image.alt}
+                width={1400}
+                height={900}
+                unoptimized
+                className="h-auto w-full object-contain"
+              />
+            </div>
+          ) : null}
+        </article>
+      )}
 
       {activeFigure ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-6" role="dialog" aria-modal="true">
