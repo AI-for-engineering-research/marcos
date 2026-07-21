@@ -26,6 +26,44 @@ type ReflectionEntry = {
 
 const reflections: ReflectionEntry[] = [
   {
+    week: "Week 6",
+    date: "July 13–17",
+    title: "Backlog-driven workflow and robustness testing",
+    summary: "Using a task backlog to preserve research context, then turning to timestep robustness, water-feedback oscillations, and ice-particle population diagnostics.",
+    bullets: [
+      "I started using `backlog.md` for tracking tasks in my pyEPM repo, and this has been a huge upgrade in my workflow.",
+      "The backlog neatly tracks tasks, outcomes, learning, and code changes, making it much easier to look back and introduce context in follow-up sessions.",
+      "I started doing work on the computational robustness of my codebase.",
+      "A few things were worrying me: hardcoded timestep series could become a problem when microphysics timescales change with input parameters; I logged diverging oscillations in the water feedback when simulating past t = 1 s; and sulfur ice number kept substantially increasing even when RHi was near 1.0 after the initial nucleation burst.",
+      "The sulfur-ice behavior is the main issue for me, because it indicates a bug that simply increasing timestep resolution will not resolve.",
+      {
+        text: "I decomposed different components to understand and visualize what is happening with ice particles from different populations.",
+        figure: {
+          src: withBasePath("/reflections/task21-3-ice-decomposition.png"),
+          alt: "Ice particle decomposition diagnostic separating contributions from different particle populations",
+          label: "View ice decomposition figure",
+        },
+      },
+      "I developed an adaptive time-stepping scheme that actively changes the timestep to capture stiff physics, instead of relying on a universal time series. I am currently testing it.",
+      "I also identified ice nucleation sensitivity to timestep size, so I need to define a convergence criterion.",
+    ],
+  },
+  {
+    week: "Week 5",
+    date: "July 6–10",
+    title: "Sticking coefficients, site redesign, and CFD automation",
+    summary: "Narrowing pyEPM validation uncertainties, redesigning the website toward a cleaner style, and using an agent to automate CFD case setup and sensitivity matrices.",
+    bullets: [
+      "From last week's work, I identified two uncertainties in matching Yu's results with pyEPM: the volatile sticking coefficient and the dilution history.",
+      "I used Yu's (2001) sticking coefficient model. I am not certain this is the latest model used, but at least it is something I can reference in the literature.",
+      "I was starting to dislike how much my website looked like AI slop. I aimed for a more minimalist design, with more white space and a more pleasant interface. I used a SquareSpace reference and iterated with Claude Sonnet 5.",
+      "I also employed a Claude agent to work on my CFD project workflow, training the agent with the working framework: flow-domain geometry, a Python wrapper, the SANS executable as a black box, and output handling.",
+      "I asked the agent to develop a workflow so I can set up relevant case information through an input YAML file and run a Python script to prepare the case for a batch-job run.",
+      "I tested it, and it works great. I then asked the agent to develop a framework for running case matrices, such as sensitivity analyses.",
+      "The matrix workflow works neatly: I run a batch script with general sensitivity metadata, it sets up the individual cases, and the batch job submits Slurm jobs in parallel.",
+    ],
+  },
+  {
     week: "Week 4",
     date: "June 29–July 3",
     title: "IMN validation and Yu et al. comparisons",
