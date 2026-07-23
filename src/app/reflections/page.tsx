@@ -44,6 +44,14 @@ const reflections: ReflectionEntry[] = [
           label: "View ice decomposition figure",
         },
       },
+      {
+        text: "I fixed the problem: some sulfur aerosols were activating but not evaporating when water vapor dropped below saturation levels.",
+        figure: {
+          src: withBasePath("/reflections/task26-phantom-reset-fixed.png"),
+          alt: "Diagnostic at T = 215 K and RHi = 120% showing the phantom-reset fix, with sulfur aerosols now evaporating below saturation",
+          label: "View phantom-reset fix figure",
+        },
+      },
       "I developed an adaptive time-stepping scheme that actively changes the timestep to capture stiff physics, instead of relying on a universal time series. I am currently testing it.",
       "I also identified ice nucleation sensitivity to timestep size, so I need to define a convergence criterion.",
     ],
