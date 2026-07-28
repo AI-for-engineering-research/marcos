@@ -84,21 +84,25 @@ export type SweepData = {
 };
 
 export async function loadSweep(): Promise<SweepData> {
-  const manifestUrl = withBasePath("/data/sweep_v1.json");
-  const binUrl = withBasePath("/data/sweep_v1.bin");
-
-  const [manifestRes, binRes] = await Promise.all([
-    fetch(manifestUrl, { cache: "force-cache" }),
-    fetch(binUrl, { cache: "force-cache" }),
-  ]);
+  // Same cache discipline as the uncertainty cube: revalidate the manifest,
+  // then key the binary by its generation stamp, so regenerating a cube under
+  // an unchanged filename is not served from cache indefinitely.
+  const manifestRes = await fetch(withBasePath("/data/sweep_v1.json"), {
+    cache: "no-cache",
+  });
   if (!manifestRes.ok) {
     throw new Error(`Failed to load sweep manifest (${manifestRes.status})`);
   }
+  const manifest = (await manifestRes.json()) as SweepManifest;
+
+  const binUrl = `${withBasePath("/data/sweep_v1.bin")}?v=${encodeURIComponent(
+    manifest.generated_utc,
+  )}`;
+  const binRes = await fetch(binUrl, { cache: "force-cache" });
   if (!binRes.ok) {
     throw new Error(`Failed to load sweep binary (${binRes.status})`);
   }
 
-  const manifest = (await manifestRes.json()) as SweepManifest;
   const buf = await binRes.arrayBuffer();
 
   if (manifest.dtype !== "float32") {

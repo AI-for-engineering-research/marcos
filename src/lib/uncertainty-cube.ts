@@ -78,18 +78,31 @@ export type CubeData = {
 };
 
 export async function loadCube(): Promise<CubeData> {
-  const [manifestRes, binRes] = await Promise.all([
-    fetch(withBasePath("/data/uncertainty_v1.json"), { cache: "force-cache" }),
-    fetch(withBasePath("/data/uncertainty_v1.bin"), { cache: "force-cache" }),
-  ]);
+  // The manifest is fetched with revalidation and the binary is then keyed by
+  // the manifest's generation stamp. Both files keep the same URL across cube
+  // refreshes, so caching them by URL alone serves a returning visitor the cube
+  // they saw last time, forever -- and because a refresh keeps the same shape,
+  // the byteLength check below cannot catch it. That is not hypothetical: after
+  // the campaign was backfilled to 18,900 cases, browsers went on rendering the
+  // 17,597-case cube and its "provisional band" notice.
+  const manifestRes = await fetch(withBasePath("/data/uncertainty_v1.json"), {
+    cache: "no-cache",
+  });
   if (!manifestRes.ok) {
     throw new Error(`Failed to load cube manifest (${manifestRes.status})`);
   }
+  const manifest = (await manifestRes.json()) as CubeManifest;
+
+  // Versioned URL, so the binary itself can still be cached hard: a new cube is
+  // a new URL rather than a stale hit.
+  const binUrl = `${withBasePath("/data/uncertainty_v1.bin")}?v=${encodeURIComponent(
+    manifest.generated_utc,
+  )}`;
+  const binRes = await fetch(binUrl, { cache: "force-cache" });
   if (!binRes.ok) {
     throw new Error(`Failed to load cube binary (${binRes.status})`);
   }
 
-  const manifest = (await manifestRes.json()) as CubeManifest;
   const buf = await binRes.arrayBuffer();
 
   if (manifest.dtype !== "float32") {
