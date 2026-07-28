@@ -1248,20 +1248,30 @@ function AxisCard({
               <span className="text-[0.6rem] text-[var(--muted)]">★ default</span>
             ) : null}
           </div>
-          {/* Detents are evenly spaced by INDEX, not by value: this is an
+          {/* Same control as range mode, one knob instead of two, and with no
+              filled portion behind it: a fill running from the left end to the
+              thumb would read as "everything up to here", which is what range
+              mode means and not what this does.
+
+              Detents are evenly spaced by INDEX, not by value: this is an
               ordinal picker over the cases that were run, and spacing it by
               value would imply the gaps in between are available. */}
-          <input
-            type="range"
-            min={0}
-            max={values.length - 1}
-            step={1}
-            value={fixedIndex}
-            onChange={(e) => onFixIndex(axis, Number(e.target.value))}
-            aria-label={`${label}, ${values.length} computed values`}
-            aria-valuetext={formatAxisValue(axis, values[fixedIndex])}
-            className="mt-1 w-full accent-[color:var(--accent)]"
-          />
+          <div className="knob-slider mt-1">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-[6.5px] right-[6.5px] top-1/2 h-1 -translate-y-1/2 rounded-full bg-[color:var(--line)]"
+            />
+            <input
+              type="range"
+              min={0}
+              max={values.length - 1}
+              step={1}
+              value={fixedIndex}
+              onChange={(e) => onFixIndex(axis, Number(e.target.value))}
+              aria-label={`${label}, ${values.length} computed values`}
+              aria-valuetext={formatAxisValue(axis, values[fixedIndex])}
+            />
+          </div>
           <Detents
             count={values.length}
             activeFrom={fixedIndex}
@@ -1298,7 +1308,7 @@ function AxisCard({
             ) : null}
           </div>
 
-          <div className="range-dual mt-1">
+          <div className="knob-slider mt-1">
             {/* Rail and shaded span, drawn under both inputs. */}
             <span
               aria-hidden

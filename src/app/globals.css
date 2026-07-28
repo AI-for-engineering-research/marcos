@@ -125,23 +125,30 @@ input[type="range"].slider-lg:focus::-moz-range-thumb {
 }
 
 /* ---------------------------------------------------------------------
- * Two-knob range slider for the Uncertainty explorer.
+ * Knob slider for the Uncertainty explorer. One input for fix mode, two
+ * stacked in the same box for range mode -- identical styling either way, so
+ * switching mode changes what the control means and not what it looks like.
  *
- * Two native range inputs stacked in the same box, rather than a custom
- * pointer-event widget: each knob keeps real keyboard support, focus and
- * ARIA state for free. Both inputs are transparent apart from their thumbs
- * and pass pointer events through except on the thumb itself, so the rail
- * and the selected span can be drawn by ordinary elements underneath.
+ * Native inputs rather than a custom pointer-event widget: each knob keeps
+ * real keyboard support, focus and ARIA state for free. The inputs are
+ * transparent apart from their thumbs and pass pointer events through except
+ * on the thumb itself, so the rail and the selected span are drawn by ordinary
+ * elements underneath.
  *
- * The knobs are clamped to stay at least one detent apart, so they never
- * stack. That is what makes non-crossing safe here: two knobs that could meet
- * would overlap, and the one underneath could no longer be grabbed.
+ * Deliberately no filled portion behind a single knob. A browser's default
+ * accent fill runs from the left end to the thumb, which on an ordinal picker
+ * reads as "everything up to here is included" -- true in range mode between
+ * two knobs, false and misleading for one knob that means a single value.
+ *
+ * In range mode the knobs are clamped at least one detent apart so they never
+ * stack: two knobs that could meet would overlap, and the one underneath could
+ * no longer be grabbed.
  * ------------------------------------------------------------------- */
-.range-dual {
+.knob-slider {
   position: relative;
   height: 18px;
 }
-.range-dual input[type="range"] {
+.knob-slider input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   position: absolute;
@@ -152,18 +159,18 @@ input[type="range"].slider-lg:focus::-moz-range-thumb {
   background: transparent;
   pointer-events: none;
 }
-.range-dual input[type="range"]:focus {
+.knob-slider input[type="range"]:focus {
   outline: none;
 }
-.range-dual input[type="range"]::-webkit-slider-runnable-track {
+.knob-slider input[type="range"]::-webkit-slider-runnable-track {
   height: 18px;
   background: transparent;
 }
-.range-dual input[type="range"]::-moz-range-track {
+.knob-slider input[type="range"]::-moz-range-track {
   height: 18px;
   background: transparent;
 }
-.range-dual input[type="range"]::-webkit-slider-thumb {
+.knob-slider input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   pointer-events: auto;
@@ -176,7 +183,7 @@ input[type="range"].slider-lg:focus::-moz-range-thumb {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
-.range-dual input[type="range"]::-moz-range-thumb {
+.knob-slider input[type="range"]::-moz-range-thumb {
   pointer-events: auto;
   height: 13px;
   width: 13px;
@@ -186,11 +193,11 @@ input[type="range"].slider-lg:focus::-moz-range-thumb {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   cursor: pointer;
 }
-.range-dual input[type="range"]:focus-visible::-webkit-slider-thumb {
+.knob-slider input[type="range"]:focus-visible::-webkit-slider-thumb {
   outline: 2px solid var(--accent-deep);
   outline-offset: 1px;
 }
-.range-dual input[type="range"]:focus-visible::-moz-range-thumb {
+.knob-slider input[type="range"]:focus-visible::-moz-range-thumb {
   outline: 2px solid var(--accent-deep);
   outline-offset: 1px;
 }
