@@ -204,6 +204,45 @@ const AXIS_UNIT: Record<string, string> = {
   soot: "# / kg-fuel",
 };
 
+// The two kinds of thing being varied, which are not equally knowable and
+// should not read as one undifferentiated list.
+//
+// Inputs are properties of a particular flight: you can look them up or measure
+// them, so fixing one is a statement about which flight you are asking about.
+// Assumptions are model closure parameters with no measured value at all --
+// tau_m's range is explicitly an assumed sensitivity spread, not a literature
+// one -- so fixing one is a statement about what you are willing to believe.
+//
+// Any axis not named here still gets a card under "Other", because an axis
+// silently missing from this column would be a control the reader cannot see
+// but that is still widening the band.
+const AXIS_GROUPS: { title: string; note: string; axes: string[] }[] = [
+  {
+    title: "Inputs",
+    note: "flight and atmospheric conditions",
+    axes: ["FSC", "T_amb", "N0"],
+  },
+  {
+    title: "Assumptions",
+    note: "model parameters with no measured value",
+    axes: ["alpha_C", "tau_m"],
+  },
+];
+
+/** Group the cube's nuisance axes for display, keeping every one of them. */
+function groupAxes(axes: string[]) {
+  const known = new Set(AXIS_GROUPS.flatMap((g) => g.axes));
+  const groups = AXIS_GROUPS.map((g) => ({
+    ...g,
+    axes: g.axes.filter((a) => axes.includes(a)),
+  })).filter((g) => g.axes.length > 0);
+
+  const rest = axes.filter((a) => !known.has(a));
+  return rest.length > 0
+    ? [...groups, { title: "Other", note: "also swept", axes: rest }]
+    : groups;
+}
+
 function formatAxisValue(axis: string, v: number): string {
   if (axis === "soot") return formatPow10(v);
   if (axis === "tau_m") return v.toFixed(3);
@@ -246,7 +285,13 @@ export function UncertaintyExplorer() {
     };
   }, []);
 
-  const nuisanceAxes = data ? data.axisNames.slice(1) : [];
+  // Memoised because it is a fresh array every render otherwise, which would
+  // defeat every downstream useMemo that depends on it.
+  const nuisanceAxes = useMemo(
+    () => (data ? data.axisNames.slice(1) : []),
+    [data],
+  );
+  const axisGroups = useMemo(() => groupAxes(nuisanceAxes), [nuisanceAxes]);
 
   const band: BandPoint[] = useMemo(
     () => (data ? reduceBand(data, VARIABLE, selection) : []),
@@ -431,74 +476,34 @@ export function UncertaintyExplorer() {
                 </button>
               </div>
 
-              <div className="mt-3 space-y-2.5">
-                {nuisanceAxes.map((axis) => {
-                  const values = data.manifest.axes[axis];
-                  const chosen = selection[axis] ?? [];
-                  const baseline = data.manifest.axis_baseline?.[axis];
-                  const isFree = chosen.length === values.length;
-                  return (
-                    <div
-                      key={axis}
-                      className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-soft)]/60 px-3 py-2"
-                    >
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-[0.78rem] font-medium leading-tight text-[var(--accent-deep)]">
-                          {AXIS_SHORT[axis] ?? axis}
-                        </span>
-                        <button
-                          type="button"
-                          className="text-[0.65rem] text-[var(--muted)] underline underline-offset-2 hover:text-[var(--accent)]"
-                          onClick={() => setAll(axis, !isFree)}
-                        >
-                          {isFree ? "clear" : "all"}
-                        </button>
-                      </div>
-                      <div className="text-[0.62rem] leading-tight text-[var(--muted)]">
-                        {AXIS_UNIT[axis] ?? ""}
-                        {chosen.length === 0
-                          ? " · none"
-                          : isFree
-                            ? " · free"
-                            : chosen.length === 1
-                              ? " · fixed"
-                              : ` · ${chosen.length}/${values.length}`}
-                      </div>
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {values.map((value, index) => {
-                          const active = chosen.includes(index);
-                          const isBaseline = baseline?.index === index;
-                          return (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => toggle(axis, index)}
-                              aria-pressed={active}
-                              title={
-                                isBaseline
-                                  ? "Model default for this parameter"
-                                  : undefined
-                              }
-                              className={[
-                                "rounded border px-1.5 py-0.5 text-[0.68rem] tabular-nums transition",
-                                active
-                                  ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
-                                  : "border-[color:var(--line)] bg-[color:var(--surface)] text-[var(--muted)] hover:border-[color:var(--accent)]",
-                              ].join(" ")}
-                            >
-                              {formatAxisValue(axis, value)}
-                              {isBaseline ? (
-                                <span aria-hidden className="ml-0.5 opacity-70">
-                                  ★
-                                </span>
-                              ) : null}
-                            </button>
-                          );
-                        })}
-                      </div>
+              <div className="mt-3 space-y-3.5">
+                {axisGroups.map((group) => (
+                  <div key={group.title}>
+                    <div className="px-0.5 pb-1">
+                      <span className="text-[0.7rem] font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
+                        {group.title}
+                      </span>
+                      <p className="text-[0.6rem] leading-snug text-[var(--muted)] opacity-80">
+                        {group.note}
+                      </p>
                     </div>
-                  );
-                })}
+                    <div className="space-y-2">
+                      {group.axes.map((axis) => (
+                        <AxisCard
+                          key={axis}
+                          axis={axis}
+                          values={data.manifest.axes[axis]}
+                          chosen={selection[axis] ?? []}
+                          baselineIndex={
+                            data.manifest.axis_baseline?.[axis]?.index ?? null
+                          }
+                          onToggle={toggle}
+                          onSetAll={setAll}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <p className="mt-2 text-[0.62rem] leading-snug text-[var(--muted)]">
@@ -794,6 +799,82 @@ export function UncertaintyExplorer() {
         </div>
       </Section>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// One parameter's value chips
+// ---------------------------------------------------------------------------
+
+function AxisCard({
+  axis,
+  values,
+  chosen,
+  baselineIndex,
+  onToggle,
+  onSetAll,
+}: {
+  axis: string;
+  values: number[];
+  chosen: number[];
+  baselineIndex: number | null;
+  onToggle: (axis: string, index: number) => void;
+  onSetAll: (axis: string, all: boolean) => void;
+}) {
+  const isFree = chosen.length === values.length;
+  return (
+    <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-soft)]/60 px-3 py-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-[0.78rem] font-medium leading-tight text-[var(--accent-deep)]">
+          {AXIS_SHORT[axis] ?? axis}
+        </span>
+        <button
+          type="button"
+          className="text-[0.65rem] text-[var(--muted)] underline underline-offset-2 hover:text-[var(--accent)]"
+          onClick={() => onSetAll(axis, !isFree)}
+        >
+          {isFree ? "clear" : "all"}
+        </button>
+      </div>
+      <div className="text-[0.62rem] leading-tight text-[var(--muted)]">
+        {AXIS_UNIT[axis] ?? ""}
+        {chosen.length === 0
+          ? " · none"
+          : isFree
+            ? " · free"
+            : chosen.length === 1
+              ? " · fixed"
+              : ` · ${chosen.length}/${values.length}`}
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-1">
+        {values.map((value, index) => {
+          const active = chosen.includes(index);
+          const isBaseline = baselineIndex === index;
+          return (
+            <button
+              key={index}
+              type="button"
+              onClick={() => onToggle(axis, index)}
+              aria-pressed={active}
+              title={isBaseline ? "Model default for this parameter" : undefined}
+              className={[
+                "rounded border px-1.5 py-0.5 text-[0.68rem] tabular-nums transition",
+                active
+                  ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
+                  : "border-[color:var(--line)] bg-[color:var(--surface)] text-[var(--muted)] hover:border-[color:var(--accent)]",
+              ].join(" ")}
+            >
+              {formatAxisValue(axis, value)}
+              {isBaseline ? (
+                <span aria-hidden className="ml-0.5 opacity-70">
+                  ★
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
