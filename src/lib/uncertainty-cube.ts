@@ -136,6 +136,35 @@ export async function loadCube(): Promise<CubeData> {
 /** Selected value indices per axis, e.g. { alpha_C: [0, 1], FSC: [4] }. */
 export type Selection = Record<string, number[]>;
 
+/**
+ * Extent of one variable over the WHOLE cube, ignoring any selection.
+ *
+ * This is what a fixed axis domain has to be built from: it bounds every band
+ * the controls can possibly produce, so the axes never move as the reader
+ * fixes or frees a parameter. Non-finite and non-positive cells are skipped --
+ * a log axis cannot show them, and sulfur ice legitimately reaches exactly 0
+ * in the cells where no sulfur particle activates.
+ */
+export function variableExtent(
+  data: CubeData,
+  varName: string,
+): [number, number] | null {
+  const v = data.varIndex.get(varName);
+  if (v === undefined) throw new Error(`Unknown variable: ${varName}`);
+
+  const cellsPerVariable = data.strides[0];
+  const start = v * cellsPerVariable;
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = start; i < start + cellsPerVariable; i++) {
+    const value = data.cube[i];
+    if (!Number.isFinite(value) || value <= 0) continue;
+    if (value < min) min = value;
+    if (value > max) max = value;
+  }
+  return min <= max ? [min, max] : null;
+}
+
 export type BandPoint = {
   x: number;
   min: number;

@@ -23,6 +23,7 @@ import {
   loadCube,
   reduceBand,
   selectionSize,
+  variableExtent,
 } from "@/lib/uncertainty-cube";
 
 // ---------------------------------------------------------------------------
@@ -173,6 +174,103 @@ function formatSci(v: number | null | undefined): string {
   const e = Math.floor(Math.log10(Math.abs(v)));
   const m = v / Math.pow(10, e);
   return `${m.toFixed(2)} × 10${toSuperscript(e)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Typeset axis titles
+// ---------------------------------------------------------------------------
+
+// The axis titles are set the way the paper sets them -- EI_soot, AEI_ice,
+// kg_fuel^-1 -- with real subscripts and superscripts rather than the ASCII
+// "EI(soot) [# / kg-fuel]" they used to be.
+//
+// Done as SVG tspans rather than by rendering LaTeX: the titles are symbols
+// with sub/superscripts and no fractions, radicals or operators, so KaTeX
+// would add a dependency and a foreignObject inside the chart SVG to typeset
+// something tspans already set correctly, in the chart's own font.
+
+type MathRun = { t: string; sub?: boolean; sup?: boolean; italic?: boolean };
+
+/**
+ * Runs laid out on one baseline. Each tspan's `dy` is the DELTA from the
+ * previous run's shift, since dy accumulates in SVG -- computing it as an
+ * absolute offset walks the text off the baseline after the second script.
+ */
+function mathRuns(runs: MathRun[], size: number) {
+  const scriptSize = Math.round(size * 0.76);
+  let shift = 0;
+  return runs.map((run, i) => {
+    const target = run.sub ? size * 0.24 : run.sup ? -size * 0.42 : 0;
+    const dy = target - shift;
+    shift = target;
+    return (
+      <tspan
+        key={i}
+        dy={dy}
+        fontSize={run.sub || run.sup ? scriptSize : size}
+        fontStyle={run.italic ? "italic" : undefined}
+      >
+        {run.t}
+      </tspan>
+    );
+  });
+}
+
+/** "# kg_fuel^-1", the units both axes carry. */
+const PER_KG_FUEL: MathRun[] = [
+  { t: "  [# kg" },
+  { t: "fuel", sub: true },
+  { t: "−1", sup: true },
+  { t: "]" },
+];
+
+const X_TITLE: MathRun[] = [
+  { t: "EI", italic: true },
+  { t: "soot", sub: true },
+  ...PER_KG_FUEL,
+];
+
+const Y_TITLE: MathRun[] = [
+  { t: "AEI", italic: true },
+  { t: "ice", sub: true },
+  ...PER_KG_FUEL,
+];
+
+type AxisLabelProps = {
+  viewBox?: { x?: number; y?: number; width?: number; height?: number };
+};
+
+function XAxisTitle({ viewBox }: AxisLabelProps) {
+  const { x = 0, y = 0, width = 0, height = 0 } = viewBox ?? {};
+  return (
+    <text
+      x={x + width / 2}
+      y={y + height + 36}
+      textAnchor="middle"
+      fill="var(--muted)"
+      fontSize={13}
+    >
+      {mathRuns(X_TITLE, 13)}
+    </text>
+  );
+}
+
+function YAxisTitle({ viewBox }: AxisLabelProps) {
+  const { x = 0, y = 0, height = 0 } = viewBox ?? {};
+  const cx = x + 14;
+  const cy = y + height / 2;
+  return (
+    <text
+      x={cx}
+      y={cy}
+      textAnchor="middle"
+      fill="var(--muted)"
+      fontSize={13}
+      transform={`rotate(-90 ${cx} ${cy})`}
+    >
+      {mathRuns(Y_TITLE, 13)}
+    </text>
+  );
 }
 
 /** Decade ticks spanning a domain, for a log axis. */
@@ -329,22 +427,53 @@ export function UncertaintyExplorer() {
     [shownPoints],
   );
 
-  // The band always anchors the view, so toggling a measurement only ever
-  // expands or contracts the axes around a stable model envelope.
+  // FIXED axes, deliberately not fitted to what is on screen.
+  //
+  // Fitting them to the current band made two selections silently
+  // incomparable: fixing a parameter shrinks the envelope, the axes shrank
+  // with it, and the band looked much the same width as before. The whole
+  // point of the page is comparing band widths, so the frame has to hold
+  // still while the contents change.
+  //
+  // Built from the whole cube plus every measured point INCLUDING the ones
+  // currently toggled off, so no control on the page can move a datum outside
+  // the view. Rounded out to decade boundaries, which is also where the ticks
+  // are.
   const domains = useMemo(() => {
     if (!data) return null;
-    const xs = [...band.map((p) => p.x), ...visiblePoints.map((p) => p.x)];
-    const ys = [
-      ...band.flatMap((p) => [p.min, p.max]),
-      ...visiblePoints.flatMap((p) => [p.yLo ?? p.y, p.yHi ?? p.y]),
+    const outerValues = data.manifest.axes[data.axisNames[0]] ?? [];
+    const cubeExtent = variableExtent(data, VARIABLE);
+    if (outerValues.length === 0 || !cubeExtent) return null;
+
+    const xs = [
+      ...outerValues,
+      ...MEASURED.flatMap((p) => [p.xLo ?? p.x, p.xHi ?? p.x]),
     ].filter((v) => Number.isFinite(v) && v > 0);
-    if (xs.length === 0 || ys.length === 0) return null;
+    const ys = [
+      ...cubeExtent,
+      ...MEASURED.flatMap((p) => [p.yLo ?? p.y, p.yHi ?? p.y]),
+    ].filter((v) => Number.isFinite(v) && v > 0);
+
     const xLo = Math.pow(10, Math.floor(Math.log10(Math.min(...xs))));
     const xHi = Math.pow(10, Math.ceil(Math.log10(Math.max(...xs))));
     const yLo = Math.pow(10, Math.floor(Math.log10(Math.min(...ys))));
     const yHi = Math.pow(10, Math.ceil(Math.log10(Math.max(...ys))));
     return { x: [xLo, xHi] as [number, number], y: [yLo, yHi] as [number, number] };
-  }, [data, band, visiblePoints]);
+  }, [data]);
+
+  // The 1:1 reference, AEI(ice) = EI(soot): every emitted soot particle ends up
+  // an ice crystal, the ceiling the soot-driven part of the model works towards.
+  //
+  // Clipped analytically to the intersection of the two domains rather than
+  // drawn across the full x range and left to overflow the plot area, and given
+  // its own two-point dataset so both ends land exactly on the frame instead of
+  // on the nearest soot grid value.
+  const unitySegment = useMemo(() => {
+    if (!domains) return [];
+    const lo = Math.max(domains.x[0], domains.y[0]);
+    const hi = Math.min(domains.x[1], domains.y[1]);
+    return lo < hi ? [{ x: lo, unity: lo }, { x: hi, unity: hi }] : [];
+  }, [domains]);
 
   function toggle(axis: string, index: number) {
     setSelection((prev) => {
@@ -570,12 +699,8 @@ export function UncertaintyExplorer() {
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
                       tick={{ fontSize: 12, fill: "var(--muted)" }}
-                      label={{
-                        value: "EI(soot)  [# / kg-fuel]",
-                        position: "insideBottom",
-                        offset: -26,
-                        style: { fill: "var(--muted)", fontSize: 13 },
-                      }}
+                      allowDataOverflow
+                      label={<XAxisTitle />}
                     />
                     <YAxis
                       type="number"
@@ -585,13 +710,9 @@ export function UncertaintyExplorer() {
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
                       tick={{ fontSize: 12, fill: "var(--muted)" }}
-                      width={58}
-                      label={{
-                        value: "AEI(ice)  [# / kg-fuel]",
-                        angle: -90,
-                        position: "insideLeft",
-                        style: { fill: "var(--muted)", fontSize: 13 },
-                      }}
+                      width={64}
+                      allowDataOverflow
+                      label={<YAxisTitle />}
                     />
                     <Tooltip
                       content={<BandTooltip nCells={nCells} />}
@@ -602,6 +723,24 @@ export function UncertaintyExplorer() {
                       align="left"
                       height={30}
                       wrapperStyle={{ fontSize: 12, color: "var(--muted)" }}
+                    />
+
+                    {/* Drawn first so the band and the measurements sit on top
+                        of it: it is a reference, not a result. Its own
+                        two-point dataset, so the ends land on the frame. */}
+                    <Line
+                      name="AEI(ice) = EI(soot)"
+                      data={unitySegment}
+                      dataKey="unity"
+                      type="linear"
+                      stroke="var(--muted)"
+                      strokeWidth={1.5}
+                      strokeDasharray="6 4"
+                      strokeOpacity={0.75}
+                      dot={false}
+                      activeDot={false}
+                      isAnimationActive={false}
+                      legendType="plainline"
                     />
 
                     {/* A range Area takes [lo, hi] per row, which keeps both
