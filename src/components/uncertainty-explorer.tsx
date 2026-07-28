@@ -374,6 +374,10 @@ const VARIABLE = "total_ice_per_kgfuel";
  * not the middle. A contiguous span cannot say that. It is the right trade for
  * a band whose reading is "somewhere between these two bounds", but it is a
  * real loss of expressiveness rather than a pure simplification.
+ *
+ * A range spans at least two values: its knobs cannot cross and cannot meet.
+ * One value is what fix mode is for, which keeps each control answering
+ * exactly one question.
  */
 type AxisMode = "fix" | "range";
 
@@ -529,27 +533,31 @@ export function UncertaintyExplorer() {
   }, [domains]);
 
   /**
-   * Move one knob. `which` is which INPUT moved, not which bound it ends up
-   * being: the knobs are free to cross, and the span is min..max afterwards.
-   * Clamping them against each other instead would let a knob get stuck
-   * underneath its twin once the span collapses to a single value.
+   * Move one knob, keeping knobs[0] strictly below knobs[1] by at least one
+   * detent. Each knob is blocked at its neighbour rather than pushing it, so
+   * dragging never silently moves the bound the reader did not grab.
+   *
+   * The one-detent floor is also what makes non-crossing safe: knobs that can
+   * meet would stack, and the one underneath could no longer be grabbed. A
+   * range therefore always spans at least two values; committing to a single
+   * one is what fix mode is for.
    */
   const setKnob = useCallback(
     (axis: string, which: 0 | 1, index: number) => {
+      if (!data) return;
+      const n = data.manifest.axes[axis].length;
+      const gap = Math.min(1, n - 1);
       setKnobs((prev) => {
-        const current = prev[axis] ?? [index, index];
-        const next: Span = which === 0 ? [index, current[1]] : [current[0], index];
-        setSelection((sel) => ({
-          ...sel,
-          [axis]: spanIndices([
-            Math.min(next[0], next[1]),
-            Math.max(next[0], next[1]),
-          ]),
-        }));
+        const [lo, hi] = prev[axis] ?? [0, n - 1];
+        const next: Span =
+          which === 0
+            ? [Math.max(0, Math.min(index, hi - gap)), hi]
+            : [lo, Math.min(n - 1, Math.max(index, lo + gap))];
+        setSelection((sel) => ({ ...sel, [axis]: spanIndices(next) }));
         return { ...prev, [axis]: next };
       });
     },
-    [],
+    [data],
   );
 
   /** Widen a range-mode axis back to every value. */
@@ -812,8 +820,9 @@ export function UncertaintyExplorer() {
 
               <p className="mt-2 text-[0.62rem] leading-snug text-[var(--muted)]">
                 ★ is the model&rsquo;s own default. <b>range</b> shades the band
-                over every value between its two knobs; <b>fix</b> commits the
-                parameter to one. EI(soot) is the x-axis and is never fixed.
+                over every value between its two knobs, which stay at least one
+                step apart; <b>fix</b> commits the parameter to a single value.
+                EI(soot) is the x-axis and is never fixed.
               </p>
               <p className="mt-1 text-[0.62rem] leading-snug text-[var(--muted)]">
                 The fix slider steps between computed values and will not stop
@@ -1179,6 +1188,8 @@ function AxisCard({
   const isFree = chosen.length === values.length;
   const fixedIndex = chosen.length === 1 ? chosen[0] : 0;
   const label = AXIS_SHORT[axis] ?? axis;
+  // setKnob keeps knobs[0] below knobs[1]; min/max is belt and braces so a bad
+  // state renders a narrow span rather than an inverted one.
   const lo = Math.min(knobs[0], knobs[1]);
   const hi = Math.max(knobs[0], knobs[1]);
   // The thumb is 13px wide and native range inputs inset the thumb centre by
@@ -1307,14 +1318,8 @@ function AxisCard({
                 step={1}
                 value={knobs[which]}
                 onChange={(e) => onKnob(axis, which, Number(e.target.value))}
-                // Which knob is the lower bound follows the values, not the
-                // DOM order, because the two are free to cross.
                 aria-label={`${label} ${
-                  knobs[0] === knobs[1]
-                    ? "bound"
-                    : knobs[which] === lo
-                      ? "lower bound"
-                      : "upper bound"
+                  which === 0 ? "lower bound" : "upper bound"
                 }, ${values.length} computed values`}
                 aria-valuetext={formatAxisValue(axis, values[knobs[which]])}
                 style={{ zIndex: which + 1 }}

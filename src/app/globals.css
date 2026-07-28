@@ -133,9 +133,9 @@ input[type="range"].slider-lg:focus::-moz-range-thumb {
  * and pass pointer events through except on the thumb itself, so the rail
  * and the selected span can be drawn by ordinary elements underneath.
  *
- * The knobs are NOT clamped against each other. Crossing is allowed and the
- * selected span is min..max of the two, which is what stops a knob from
- * getting stuck under its twin when the range collapses to one value.
+ * The knobs are clamped to stay at least one detent apart, so they never
+ * stack. That is what makes non-crossing safe here: two knobs that could meet
+ * would overlap, and the one underneath could no longer be grabbed.
  * ------------------------------------------------------------------- */
 .range-dual {
   position: relative;
