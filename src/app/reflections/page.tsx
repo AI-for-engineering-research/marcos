@@ -3,6 +3,10 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Section } from "@/components/section";
+import {
+  TranscriptModal,
+  type TranscriptData,
+} from "@/components/transcript-modal";
 import { withBasePath } from "@/lib/base-path";
 
 type FigureData = {
@@ -12,12 +16,17 @@ type FigureData = {
   maxWidth?: string;
 };
 
+type Bullet =
+  | string
+  | { text: string; figure: FigureData }
+  | { text: string; transcript: TranscriptData };
+
 type ReflectionEntry = {
   week: string;
   date: string;
   title: string;
   summary: string;
-  bullets: Array<string | { text: string; figure: FigureData }>;
+  bullets: Bullet[];
   image?: {
     src: string;
     alt: string;
@@ -25,6 +34,31 @@ type ReflectionEntry = {
 };
 
 const reflections: ReflectionEntry[] = [
+  {
+    week: "Week 7",
+    date: "July 20–24",
+    title: "Parametric uncertainty against flight measurements",
+    summary:
+      "Scoping a six-parameter uncertainty campaign through an agent grilling session, running 18,900 cases on hex, and building a portfolio tab that shades the model envelope against ECLIF3 and VOLCAN data.",
+    bullets: [
+      "Something I've been meaning to do for a while is compare my model to measured ice particle numbers from flight campaigns, including the uncertainties of the physics parameters that are difficult to fit.",
+      "This is quite a detailed mini project. In a Claude session I detailed what I wanted: a tab in my research portfolio showing the uncertainties of my model, along with plotted measurements from flight campaigns.",
+      "I already expected that this plot would require running thousands of cases, so I leveraged resources from hex (until we have our own).",
+      "With the task instructions I asked Claude to `/grill-with-docs`. What followed was a series of questions — a grilling — to scope the mini project and define the parameter space.",
+      {
+        text: "Through the grilling session it came up that I hadn't closed a previous task that was flagging a bug already taken care of. That was my own fault, but I cleared it with the agent.",
+        transcript: {
+          src: withBasePath(
+            "/transcripts/2026-07-27_6d-uncertainty-campaign-and-envelope-explorer.md",
+          ),
+          title: "6-D uncertainty campaign and Kärcher envelope explorer",
+          label: "Read the session transcript",
+        },
+      },
+      "First pass looks really good, just small tweaks here and there on the structure of the uncertainty tab.",
+      "There are some cases I had to rerun after accidentally timing them out before they had a chance to finish in Slurm, but I asked Claude to set up the visualization regardless while I finished rerunning them.",
+    ],
+  },
   {
     week: "Week 6",
     date: "July 13–17",
@@ -185,6 +219,8 @@ const reflections: ReflectionEntry[] = [
 
 export default function ReflectionsPage() {
   const [activeFigure, setActiveFigure] = useState<FigureData | null>(null);
+  const [activeTranscript, setActiveTranscript] =
+    useState<TranscriptData | null>(null);
   const [activeWeek, setActiveWeek] = useState<string | null>(null);
   const activeReflection = reflections.find((entry) => entry.week === activeWeek) ?? null;
 
@@ -283,7 +319,7 @@ export default function ReflectionsPage() {
                 <span>
                   {typeof bullet === "string" ? (
                     bullet
-                  ) : (
+                  ) : "figure" in bullet ? (
                     <>
                       {bullet.text}{" "}
                       <button
@@ -292,6 +328,17 @@ export default function ReflectionsPage() {
                         className="font-medium text-[var(--accent)] underline-offset-4 transition hover:underline"
                       >
                         {bullet.figure.label}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {bullet.text}{" "}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTranscript(bullet.transcript)}
+                        className="font-medium text-[var(--accent)] underline-offset-4 transition hover:underline"
+                      >
+                        {bullet.transcript.label}
                       </button>
                     </>
                   )}
@@ -340,6 +387,14 @@ export default function ReflectionsPage() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {activeTranscript ? (
+        <TranscriptModal
+          key={activeTranscript.src}
+          transcript={activeTranscript}
+          onClose={() => setActiveTranscript(null)}
+        />
       ) : null}
     </div>
   );
