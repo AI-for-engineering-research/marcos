@@ -58,10 +58,21 @@ type CampaignName = keyof typeof CAMPAIGN_STYLE;
 // Dischl axes, and read off log-log axes for Voigt. Nulls are directions where
 // the published figure shows no bar, not zero-width uncertainty.
 
+// FSC and T_amb are the conditions each flight was flown and modelled at, taken
+// from pyEPM data/uncertainty_analysis/alpha_C/ice_extract.csv -- the per-case
+// ambient conditions the alpha_C campaign ran, which came from the papers'
+// reported values. They are NOT swept quantities here: they say where on the
+// band's parameter space each measurement sits, which is the point of listing
+// them beside the chart.
+//
+// All seven share pressure 22,919.5 Pa and RHi 110%.
+
 type MeasuredPoint = {
+  id: string;
   label: string;
   campaign: CampaignName;
   fsc: number;
+  tAmb: number;
   x: number;
   y: number;
   xLo: number | null;
@@ -72,41 +83,50 @@ type MeasuredPoint = {
 
 const MEASURED: MeasuredPoint[] = [
   {
-    label: "ECLIF3-2 med-S blend", campaign: "ECLIF3-2", fsc: 505,
+    id: "eclif32-blend", label: "Med-S blend", campaign: "ECLIF3-2",
+    fsc: 505, tAmb: 215.8,
     x: 0.672e15, y: 1.477e15,
     xLo: 0.603e15, xHi: 0.804e15, yLo: 0.81e15, yHi: 1.808e15,
   },
   {
-    label: "ECLIF3-2 low-S Jet A-1", campaign: "ECLIF3-2", fsc: 125,
+    id: "eclif32-jeta1", label: "Low-S Jet A-1", campaign: "ECLIF3-2",
+    fsc: 125, tAmb: 217.0,
     x: 0.763e15, y: 0.54e15,
     xLo: 0.529e15, xHi: 0.915e15, yLo: 0.307e15, yHi: 0.855e15,
   },
   {
-    label: "ECLIF3-2 ultra-low-S HEFA-SPK", campaign: "ECLIF3-2", fsc: 3,
+    id: "eclif32-hefa", label: "Ultra-low-S HEFA-SPK", campaign: "ECLIF3-2",
+    fsc: 3, tAmb: 215.8,
     x: 0.562e15, y: 0.52e15,
     xLo: 0.504e15, xHi: 0.672e15, yLo: 0.266e15, yHi: 0.774e15,
   },
   {
-    label: "ECLIF3-1 Jet A-1", campaign: "ECLIF3-1", fsc: 211,
+    id: "eclif31-jeta1", label: "Jet A-1", campaign: "ECLIF3-1",
+    fsc: 211, tAmb: 213.3,
     x: 0.71e15, y: 0.88e15,
     xLo: 0.631e15, xHi: 0.843e15, yLo: 0.561e15, yHi: 1.527e15,
   },
   {
-    label: "ECLIF3-1 HEFA-SPK", campaign: "ECLIF3-1", fsc: 7,
+    id: "eclif31-hefa", label: "HEFA-SPK", campaign: "ECLIF3-1",
+    fsc: 7, tAmb: 213.8,
     x: 0.501e15, y: 0.305e15,
     xLo: 0.452e15, xHi: 0.603e15, yLo: 0.17e15, yHi: 0.547e15,
   },
   {
-    label: "VOLCAN HEFA blend (lean)", campaign: "VOLCAN", fsc: 75,
+    id: "volcan-hefa", label: "HEFA blend (lean)", campaign: "VOLCAN",
+    fsc: 75, tAmb: 218.0,
     x: 3.44e11, y: 4.48e14,
     xLo: null, xHi: null, yLo: 2.64e14, yHi: 6.43e14,
   },
   {
-    label: "VOLCAN Jet A-1 (lean)", campaign: "VOLCAN", fsc: 192,
+    id: "volcan-jeta1", label: "Jet A-1 (lean)", campaign: "VOLCAN",
+    fsc: 192, tAmb: 218.0,
     x: 6.64e11, y: 1.47e15,
     xLo: 1.79e11, xHi: 1.19e12, yLo: null, yHi: null,
   },
 ];
+
+const CAMPAIGN_ORDER: CampaignName[] = ["ECLIF3-2", "ECLIF3-1", "VOLCAN"];
 
 /** Recharts ErrorBar wants [minusOffset, plusOffset], not absolute caps. */
 function errorOffsets(
@@ -164,13 +184,24 @@ function decadeTicks(lo: number, hi: number): number[] {
   return out;
 }
 
-const AXIS_LABEL: Record<string, string> = {
-  alpha_C: "α_C — water accommodation coefficient",
-  FSC: "FSC — fuel sulfur content [ppm]",
-  T_amb: "T_amb — ambient temperature [K]",
-  N0: "N₀ — initial dilution [kg-air / kg-fuel]",
-  tau_m: "τ_m — jet mixing timescale [s]",
-  soot: "EI(soot) [# / kg-fuel]",
+// Split into name and unit so the narrow left column can put them on two lines
+// without wrapping mid-phrase.
+const AXIS_SHORT: Record<string, string> = {
+  alpha_C: "α_C",
+  FSC: "FSC",
+  T_amb: "T_amb",
+  N0: "N₀",
+  tau_m: "τ_m",
+  soot: "EI(soot)",
+};
+
+const AXIS_UNIT: Record<string, string> = {
+  alpha_C: "water accommodation",
+  FSC: "fuel sulfur, ppm",
+  T_amb: "ambient temp., K",
+  N0: "initial dilution, kg/kg",
+  tau_m: "jet mixing time, s",
+  soot: "# / kg-fuel",
 };
 
 function formatAxisValue(axis: string, v: number): string {
@@ -190,7 +221,9 @@ export function UncertaintyExplorer() {
   const [data, setData] = useState<CubeData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection>({});
-  const [showMeasured, setShowMeasured] = useState(true);
+  const [shownPoints, setShownPoints] = useState<Set<string>>(
+    () => new Set(MEASURED.map((p) => p.id)),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -227,19 +260,27 @@ export function UncertaintyExplorer() {
     (name) => (selection[name]?.length ?? 0) === 0,
   );
 
+  const visiblePoints = useMemo(
+    () => MEASURED_ROWS.filter((p) => shownPoints.has(p.id)),
+    [shownPoints],
+  );
+
+  // The band always anchors the view, so toggling a measurement only ever
+  // expands or contracts the axes around a stable model envelope.
   const domains = useMemo(() => {
     if (!data) return null;
-    const xs = [...band.map((p) => p.x), ...MEASURED.map((p) => p.x)];
+    const xs = [...band.map((p) => p.x), ...visiblePoints.map((p) => p.x)];
     const ys = [
       ...band.flatMap((p) => [p.min, p.max]),
-      ...MEASURED.flatMap((p) => [p.yLo ?? p.y, p.yHi ?? p.y]),
+      ...visiblePoints.flatMap((p) => [p.yLo ?? p.y, p.yHi ?? p.y]),
     ].filter((v) => Number.isFinite(v) && v > 0);
+    if (xs.length === 0 || ys.length === 0) return null;
     const xLo = Math.pow(10, Math.floor(Math.log10(Math.min(...xs))));
     const xHi = Math.pow(10, Math.ceil(Math.log10(Math.max(...xs))));
     const yLo = Math.pow(10, Math.floor(Math.log10(Math.min(...ys))));
     const yHi = Math.pow(10, Math.ceil(Math.log10(Math.max(...ys))));
     return { x: [xLo, xHi] as [number, number], y: [yLo, yHi] as [number, number] };
-  }, [data, band]);
+  }, [data, band, visiblePoints]);
 
   function toggle(axis: string, index: number) {
     setSelection((prev) => {
@@ -266,6 +307,19 @@ export function UncertaintyExplorer() {
       next[name] = data.manifest.axes[name].map((_, i) => i);
     }
     setSelection(next);
+  }
+
+  function togglePoint(id: string) {
+    setShownPoints((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function setAllPoints(all: boolean) {
+    setShownPoints(all ? new Set(MEASURED.map((p) => p.id)) : new Set());
   }
 
   function pinToBaseline() {
@@ -299,9 +353,11 @@ export function UncertaintyExplorer() {
     );
   }
 
-  const campaignsShown = Array.from(
-    new Set(MEASURED.map((p) => p.campaign)),
-  ) as CampaignName[];
+  // Only campaigns with at least one point still selected get a series, so an
+  // entirely deselected campaign leaves no orphaned legend entry behind.
+  const campaignsShown = CAMPAIGN_ORDER.filter((campaign) =>
+    visiblePoints.some((p) => p.campaign === campaign),
+  );
 
   return (
     <>
@@ -315,8 +371,12 @@ export function UncertaintyExplorer() {
           "parameters you are willing to commit to, and watch how much of the band " +
           "each one was responsible for."
         }
-      >
-        <div className="space-y-6">
+      />
+
+      {/* Full width rather than inside a Section: the controls have to sit
+          beside the plot, not under it, or you cannot see what a toggle did. */}
+      <div className="editorial-rule border-t py-8">
+        <div className="space-y-4">
           {provisional ? (
             <div className="rounded-md border border-[color:var(--line)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[var(--muted)]">
               <span className="font-medium text-[var(--accent-deep)]">
@@ -324,12 +384,12 @@ export function UncertaintyExplorer() {
               </span>{" "}
               {data.manifest.coverage.n_present.toLocaleString()} of{" "}
               {data.manifest.coverage.n_cases.toLocaleString()} grid cases have
-              finished ({" "}
+              finished (
               {(
                 (100 * data.manifest.coverage.n_present) /
                 data.manifest.coverage.n_cases
               ).toFixed(1)}
-              % ). Missing cases are skipped rather than interpolated, so the
+              %). Missing cases are skipped rather than interpolated, so the
               band shown is a lower bound on its true width — it can only widen
               as the remaining runs land.
             </div>
@@ -342,93 +402,200 @@ export function UncertaintyExplorer() {
             </div>
           ) : null}
 
-          <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface)] p-4">
-            <ResponsiveContainer width="100%" height={420}>
-              <ComposedChart
-                data={band}
-                margin={{ top: 16, right: 24, bottom: 48, left: 16 }}
-              >
-                <CartesianGrid
-                  stroke="var(--line)"
-                  strokeDasharray="2 4"
-                  vertical
-                />
-                <XAxis
-                  dataKey="x"
-                  type="number"
-                  scale="log"
-                  domain={domains.x}
-                  ticks={decadeTicks(domains.x[0], domains.x[1])}
-                  tickFormatter={formatPow10}
-                  stroke="var(--muted)"
-                  tick={{ fontSize: 12, fill: "var(--muted)" }}
-                  label={{
-                    value: "EI(soot)  [# / kg-fuel]",
-                    position: "insideBottom",
-                    offset: -28,
-                    style: { fill: "var(--muted)", fontSize: 13 },
-                  }}
-                />
-                <YAxis
-                  type="number"
-                  scale="log"
-                  domain={domains.y}
-                  ticks={decadeTicks(domains.y[0], domains.y[1])}
-                  tickFormatter={formatPow10}
-                  stroke="var(--muted)"
-                  tick={{ fontSize: 12, fill: "var(--muted)" }}
-                  width={64}
-                  label={{
-                    value: "AEI(ice)  [# / kg-fuel]",
-                    angle: -90,
-                    position: "insideLeft",
-                    style: { fill: "var(--muted)", fontSize: 13 },
-                  }}
-                />
-                <Tooltip
-                  content={<BandTooltip nCells={nCells} />}
-                  cursor={{ stroke: "var(--muted)", strokeDasharray: "3 3" }}
-                />
-                <Legend
-                  verticalAlign="top"
-                  align="left"
-                  height={36}
-                  wrapperStyle={{ fontSize: 12, color: "var(--muted)" }}
-                />
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            {/* ---------------- parameters, left ---------------- */}
+            <aside className="lg:w-[15rem] lg:shrink-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <h3 className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent-deep)]">
+                  Parameters
+                </h3>
+                <span className="text-[0.68rem] tabular-nums text-[var(--muted)]">
+                  {nCells.toLocaleString()} runs
+                </span>
+              </div>
 
-                {/* The band. A range Area takes [lo, hi] per row, which keeps
-                    both endpoints positive and therefore plottable on a log
-                    axis -- a stacked base+span area would need a zero
-                    baseline. */}
-                <Area
-                  name="Model range"
-                  type="monotone"
-                  dataKey={(row: BandPoint) => [row.min, row.max]}
-                  stroke={MODEL_BLUE}
-                  strokeWidth={1}
-                  strokeOpacity={0.5}
-                  fill={MODEL_BLUE}
-                  fillOpacity={0.16}
-                  isAnimationActive={false}
-                  connectNulls={false}
-                />
-                <Line
-                  name="Nominal (all defaults)"
-                  type="monotone"
-                  dataKey="nominal"
-                  stroke={MODEL_DEEP}
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
-                  connectNulls={false}
-                />
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[0.68rem] text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[var(--accent-deep)]"
+                >
+                  Free all
+                </button>
+                <button
+                  type="button"
+                  onClick={pinToBaseline}
+                  className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[0.68rem] text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[var(--accent-deep)]"
+                >
+                  Pin to defaults
+                </button>
+              </div>
 
-                {showMeasured
-                  ? campaignsShown.map((campaign) => (
+              <div className="mt-3 space-y-2.5">
+                {nuisanceAxes.map((axis) => {
+                  const values = data.manifest.axes[axis];
+                  const chosen = selection[axis] ?? [];
+                  const baseline = data.manifest.axis_baseline?.[axis];
+                  const isFree = chosen.length === values.length;
+                  return (
+                    <div
+                      key={axis}
+                      className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-soft)]/60 px-3 py-2"
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[0.78rem] font-medium leading-tight text-[var(--accent-deep)]">
+                          {AXIS_SHORT[axis] ?? axis}
+                        </span>
+                        <button
+                          type="button"
+                          className="text-[0.65rem] text-[var(--muted)] underline underline-offset-2 hover:text-[var(--accent)]"
+                          onClick={() => setAll(axis, !isFree)}
+                        >
+                          {isFree ? "clear" : "all"}
+                        </button>
+                      </div>
+                      <div className="text-[0.62rem] leading-tight text-[var(--muted)]">
+                        {AXIS_UNIT[axis] ?? ""}
+                        {chosen.length === 0
+                          ? " · none"
+                          : isFree
+                            ? " · free"
+                            : chosen.length === 1
+                              ? " · fixed"
+                              : ` · ${chosen.length}/${values.length}`}
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {values.map((value, index) => {
+                          const active = chosen.includes(index);
+                          const isBaseline = baseline?.index === index;
+                          return (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => toggle(axis, index)}
+                              aria-pressed={active}
+                              title={
+                                isBaseline
+                                  ? "Model default for this parameter"
+                                  : undefined
+                              }
+                              className={[
+                                "rounded border px-1.5 py-0.5 text-[0.68rem] tabular-nums transition",
+                                active
+                                  ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
+                                  : "border-[color:var(--line)] bg-[color:var(--surface)] text-[var(--muted)] hover:border-[color:var(--accent)]",
+                              ].join(" ")}
+                            >
+                              {formatAxisValue(axis, value)}
+                              {isBaseline ? (
+                                <span aria-hidden className="ml-0.5 opacity-70">
+                                  ★
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <p className="mt-2 text-[0.62rem] leading-snug text-[var(--muted)]">
+                ★ is the model&rsquo;s own default. All values selected = free;
+                one = fixed; a subset = partial commitment. EI(soot) is the
+                x-axis and is never fixed.
+              </p>
+            </aside>
+
+            {/* ---------------- plot, centre ---------------- */}
+            <div className="min-w-0 flex-1">
+              <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface)] p-3">
+                <ResponsiveContainer width="100%" height={440}>
+                  <ComposedChart
+                    data={band}
+                    margin={{ top: 12, right: 16, bottom: 44, left: 12 }}
+                  >
+                    <CartesianGrid
+                      stroke="var(--line)"
+                      strokeDasharray="2 4"
+                      vertical
+                    />
+                    <XAxis
+                      dataKey="x"
+                      type="number"
+                      scale="log"
+                      domain={domains.x}
+                      ticks={decadeTicks(domains.x[0], domains.x[1])}
+                      tickFormatter={formatPow10}
+                      stroke="var(--muted)"
+                      tick={{ fontSize: 12, fill: "var(--muted)" }}
+                      label={{
+                        value: "EI(soot)  [# / kg-fuel]",
+                        position: "insideBottom",
+                        offset: -26,
+                        style: { fill: "var(--muted)", fontSize: 13 },
+                      }}
+                    />
+                    <YAxis
+                      type="number"
+                      scale="log"
+                      domain={domains.y}
+                      ticks={decadeTicks(domains.y[0], domains.y[1])}
+                      tickFormatter={formatPow10}
+                      stroke="var(--muted)"
+                      tick={{ fontSize: 12, fill: "var(--muted)" }}
+                      width={58}
+                      label={{
+                        value: "AEI(ice)  [# / kg-fuel]",
+                        angle: -90,
+                        position: "insideLeft",
+                        style: { fill: "var(--muted)", fontSize: 13 },
+                      }}
+                    />
+                    <Tooltip
+                      content={<BandTooltip nCells={nCells} />}
+                      cursor={{ stroke: "var(--muted)", strokeDasharray: "3 3" }}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      align="left"
+                      height={30}
+                      wrapperStyle={{ fontSize: 12, color: "var(--muted)" }}
+                    />
+
+                    {/* A range Area takes [lo, hi] per row, which keeps both
+                        endpoints positive and therefore plottable on a log
+                        axis -- a stacked base+span area would need a zero
+                        baseline. */}
+                    <Area
+                      name="Model range"
+                      type="monotone"
+                      dataKey={(row: BandPoint) => [row.min, row.max]}
+                      stroke={MODEL_BLUE}
+                      strokeWidth={1}
+                      strokeOpacity={0.5}
+                      fill={MODEL_BLUE}
+                      fillOpacity={0.16}
+                      isAnimationActive={false}
+                      connectNulls={false}
+                    />
+                    <Line
+                      name="Nominal (all defaults)"
+                      type="monotone"
+                      dataKey="nominal"
+                      stroke={MODEL_DEEP}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                      connectNulls={false}
+                    />
+
+                    {campaignsShown.map((campaign) => (
                       <Scatter
                         key={campaign}
                         name={campaign}
-                        data={MEASURED_ROWS.filter(
+                        data={visiblePoints.filter(
                           (p) => p.campaign === campaign,
                         )}
                         dataKey="y"
@@ -451,143 +618,122 @@ export function UncertaintyExplorer() {
                           stroke={CAMPAIGN_STYLE[campaign].color}
                         />
                       </Scatter>
-                    ))
-                  : null}
-              </ComposedChart>
-            </ResponsiveContainer>
+                    ))}
+                  </ComposedChart>
+                </ResponsiveContainer>
 
-            <p className="mt-2 text-xs text-[var(--muted)]">
-              Band = min/max over {nCells.toLocaleString()} parameter
-              combination{nCells === 1 ? "" : "s"} at each soot value
-              {nMissing > 0
-                ? `, of which ${nMissing.toLocaleString()} are still running and were skipped`
-                : ""}
-              . This is a <em>range</em>, not a confidence interval — see the
-              note below.
-            </p>
-          </div>
-
-          {/* ----------------------------------------------------------- */}
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--accent-deep)]">
-                Parameters
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={resetAll}
-                  className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[var(--accent-deep)]"
-                >
-                  Free everything
-                </button>
-                <button
-                  type="button"
-                  onClick={pinToBaseline}
-                  className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[var(--accent-deep)]"
-                >
-                  Pin all to defaults
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowMeasured((v) => !v)}
-                  className="rounded-full border border-[color:var(--line)] px-3 py-1 text-xs text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[var(--accent-deep)]"
-                >
-                  {showMeasured ? "Hide" : "Show"} measurements
-                </button>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Band = min/max over {nCells.toLocaleString()} parameter
+                  combination{nCells === 1 ? "" : "s"} at each soot value
+                  {nMissing > 0
+                    ? `, of which ${nMissing.toLocaleString()} are still running and were skipped`
+                    : ""}
+                  . This is a <em>range</em>, not a confidence interval — see
+                  below.
+                </p>
               </div>
             </div>
 
-            <p className="max-w-3xl text-sm leading-6 text-[var(--muted)]">
-              Each row is one swept parameter. Every value selected means the
-              band is free to range over it; a single value fixes it. Selecting
-              a subset expresses a partial commitment — &ldquo;α_C is somewhere
-              between 0.4 and 1&rdquo; — which is the honest position for most
-              of these. EI(soot) is the x-axis and so is never fixed here.
-            </p>
+            {/* ---------------- measurements, right ---------------- */}
+            <aside className="lg:w-[16.5rem] lg:shrink-0">
+              <div className="flex items-baseline justify-between gap-2">
+                <h3 className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent-deep)]">
+                  Measurements
+                </h3>
+                <span className="text-[0.68rem] tabular-nums text-[var(--muted)]">
+                  {visiblePoints.length}/{MEASURED.length}
+                </span>
+              </div>
 
-            <div className="grid gap-4">
-              {nuisanceAxes.map((axis) => {
-                const values = data.manifest.axes[axis];
-                const chosen = selection[axis] ?? [];
-                const baseline = data.manifest.axis_baseline?.[axis];
-                const isFree = chosen.length === values.length;
-                return (
-                  <div
-                    key={axis}
-                    className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-soft)]/60 px-4 py-3"
-                  >
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="text-sm font-medium text-[var(--accent-deep)]">
-                        {AXIS_LABEL[axis] ?? axis}
-                      </span>
-                      <span className="text-xs text-[var(--muted)]">
-                        {chosen.length === 0
-                          ? "none selected"
-                          : isFree
-                            ? `free (${values.length} values)`
-                            : chosen.length === 1
-                              ? "fixed"
-                              : `${chosen.length} of ${values.length}`}
-                        {" · "}
-                        <button
-                          type="button"
-                          className="underline underline-offset-2 hover:text-[var(--accent)]"
-                          onClick={() => setAll(axis, !isFree)}
-                        >
-                          {isFree ? "clear" : "all"}
-                        </button>
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {values.map((value, index) => {
-                        const active = chosen.includes(index);
-                        const isBaseline = baseline?.index === index;
-                        return (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => toggle(axis, index)}
-                            aria-pressed={active}
-                            title={
-                              isBaseline
-                                ? "Model default for this parameter"
-                                : undefined
-                            }
-                            className={[
-                              "rounded-full border px-2.5 py-1 text-xs tabular-nums transition",
-                              active
-                                ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
-                                : "border-[color:var(--line)] bg-[color:var(--surface)] text-[var(--muted)] hover:border-[color:var(--accent)]",
-                            ].join(" ")}
-                          >
-                            {formatAxisValue(axis, value)}
-                            {isBaseline ? (
-                              <span
-                                aria-hidden
-                                className={
-                                  active ? "ml-1 opacity-80" : "ml-1 opacity-60"
-                                }
-                              >
-                                ★
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAllPoints(true)}
+                  className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[0.68rem] text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[var(--accent-deep)]"
+                >
+                  Show all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllPoints(false)}
+                  className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[0.68rem] text-[var(--muted)] transition hover:border-[color:var(--accent)] hover:text-[var(--accent-deep)]"
+                >
+                  Hide all
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-3">
+                {CAMPAIGN_ORDER.map((campaign) => {
+                  const points = MEASURED.filter(
+                    (p) => p.campaign === campaign,
+                  );
+                  if (points.length === 0) return null;
+                  return (
+                    <div key={campaign}>
+                      <div className="flex items-center gap-1.5 px-0.5 pb-1">
+                        <MarkerGlyph campaign={campaign} />
+                        <span className="text-[0.7rem] font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
+                          {campaign}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {points.map((p) => {
+                          const on = shownPoints.has(p.id);
+                          const color = CAMPAIGN_STYLE[p.campaign].color;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => togglePoint(p.id)}
+                              aria-pressed={on}
+                              className={[
+                                "w-full rounded-lg border px-2.5 py-1.5 text-left transition",
+                                on
+                                  ? "border-[color:var(--line)] bg-[color:var(--surface-soft)]/70"
+                                  : "border-dashed border-[color:var(--line)] bg-transparent opacity-55 hover:opacity-80",
+                              ].join(" ")}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <span
+                                  aria-hidden
+                                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                                  style={{
+                                    background: on ? color : "transparent",
+                                    border: `1.5px solid ${color}`,
+                                    borderRadius:
+                                      CAMPAIGN_STYLE[p.campaign].shape ===
+                                      "circle"
+                                        ? "9999px"
+                                        : "2px",
+                                  }}
+                                />
+                                <span className="text-[0.78rem] font-medium leading-tight text-[var(--accent-deep)]">
+                                  {p.label}
+                                </span>
                               </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
+                              <span className="mt-0.5 block pl-4 text-[0.63rem] leading-tight tabular-nums text-[var(--muted)]">
+                                FSC {p.fsc} ppm · T {p.tAmb} K
+                                <br />
+                                EI(soot) {formatSci(p.x)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-xs text-[var(--muted)]">
-              ★ marks the value used in the model&rsquo;s own default input, so
-              the nominal curve is the cell where every ★ coincides — read
-              directly from the grid, not interpolated.
-            </p>
+                  );
+                })}
+              </div>
+
+              <p className="mt-2 text-[0.62rem] leading-snug text-[var(--muted)]">
+                FSC and T are the conditions each flight was flown at, not swept
+                quantities — they say where in the band&rsquo;s parameter space
+                the point sits. Coordinates and bars are digitised; see below.
+              </p>
+            </aside>
           </div>
         </div>
-      </Section>
+      </div>
 
       <Section eyebrow="Reading this" title="What the band is, and is not">
         <div className="grid gap-6 text-sm leading-7 text-[var(--muted)] sm:grid-cols-2">
@@ -652,6 +798,28 @@ export function UncertaintyExplorer() {
 }
 
 // ---------------------------------------------------------------------------
+// Campaign marker glyph
+// ---------------------------------------------------------------------------
+// Mirrors the marker Recharts draws for each campaign's Scatter, so the list on
+// the right reads as the same encoding as the plot rather than as a legend that
+// happens to share a colour.
+
+function MarkerGlyph({ campaign }: { campaign: CampaignName }) {
+  const { color, shape } = CAMPAIGN_STYLE[campaign];
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+      {shape === "circle" ? (
+        <circle cx="5" cy="5" r="4" fill={color} />
+      ) : shape === "triangle" ? (
+        <polygon points="5,1 9,9 1,9" fill={color} />
+      ) : (
+        <rect x="1" y="1" width="8" height="8" fill={color} />
+      )}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Tooltip
 // ---------------------------------------------------------------------------
 
@@ -675,8 +843,12 @@ function BandTooltip({
     const p = measured.payload as MeasuredPoint;
     return (
       <div className="rounded-md border border-[color:var(--line)] bg-[color:var(--surface)] px-3 py-2 text-xs shadow-sm">
-        <div className="font-medium text-[var(--accent-deep)]">{p.label}</div>
-        <div className="mt-1 text-[var(--muted)]">FSC {p.fsc} ppm</div>
+        <div className="font-medium text-[var(--accent-deep)]">
+          {p.campaign} — {p.label}
+        </div>
+        <div className="mt-1 text-[var(--muted)]">
+          FSC {p.fsc} ppm · T_amb {p.tAmb} K
+        </div>
         <div className="text-[var(--muted)]">
           EI(soot) {formatSci(p.x)}
           {p.xLo !== null || p.xHi !== null
