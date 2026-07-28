@@ -1,6 +1,6 @@
 {
   "format": "pyepm-uncertainty-cube/v1",
-  "generated_utc": "2026-07-28T13:50:35.021077+00:00",
+  "generated_utc": "2026-07-28T14:16:40.624805+00:00",
   "binary_file": "uncertainty_v1.bin",
   "dtype": "float32",
   "byte_order": "little",
@@ -213,19 +213,14 @@
   "campaign_manifest_sha256": "39e6ef6bf367cddd671abef7038de2fa0e3eb7586651429dbf48140aec31d73e",
   "coverage": {
     "n_cases": 18900,
-    "n_present": 18899,
-    "n_missing": 1,
-    "complete": false,
-    "missing_case_paths": [
-      "alpha_C=1.0/FSC=3/T_amb=211/N0=50/tau_m=0.007/soot=1.17877e12"
-    ],
-    "missing_case_ids": [
-      3
-    ],
+    "n_present": 18900,
+    "n_missing": 0,
+    "complete": true,
+    "missing_case_paths": [],
+    "missing_case_ids": [],
     "missing_truncated": false
   },
   "notes": [
-    "PREVIEW: 1 of 18900 cases are NaN. Any reduction must ignore NaN, and the band is provisional.",
     "Final state only (t = 1 s); no time axis.",
     "soot is outermost among the data axes so a reduction over the others is contiguous.",
     "Band consumers: the campaign grid is uniformly spaced with no argued prior, so min/max over selected values is a RANGE, not a percentile interval."
