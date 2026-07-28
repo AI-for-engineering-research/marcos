@@ -301,6 +301,25 @@ export function UncertaintyExplorer() {
   const nCells = data ? selectionSize(data, selection) : 0;
   const nMissing = band.reduce((acc, p) => acc + p.nMissing, 0);
   const provisional = Boolean(data && !data.manifest.coverage.complete);
+
+  // Name the outstanding cases when there are few enough to be worth reading.
+  // Past a handful the list stops informing and the count is the whole story.
+  const missingLabels = useMemo(() => {
+    const paths = data?.manifest.coverage.missing_case_paths ?? [];
+    if (paths.length === 0 || paths.length > 3) return [];
+    return paths.map((path) =>
+      path
+        .split("/")
+        .map((part) => {
+          const [axis, raw] = part.split("=");
+          const value = Number(raw);
+          return `${AXIS_SHORT[axis] ?? axis} ${
+            Number.isFinite(value) ? formatAxisValue(axis, value) : raw
+          }`;
+        })
+        .join(", "),
+    );
+  }, [data]);
   const emptySelection = nuisanceAxes.some(
     (name) => (selection[name]?.length ?? 0) === 0,
   );
@@ -427,16 +446,32 @@ export function UncertaintyExplorer() {
               <span className="font-medium text-[var(--accent-deep)]">
                 Provisional band.
               </span>{" "}
-              {data.manifest.coverage.n_present.toLocaleString()} of{" "}
-              {data.manifest.coverage.n_cases.toLocaleString()} grid cases have
-              finished (
-              {(
-                (100 * data.manifest.coverage.n_present) /
-                data.manifest.coverage.n_cases
-              ).toFixed(1)}
-              %). Missing cases are skipped rather than interpolated, so the
-              band shown is a lower bound on its true width — it can only widen
-              as the remaining runs land.
+              {data.manifest.coverage.n_missing.toLocaleString()} of{" "}
+              {data.manifest.coverage.n_cases.toLocaleString()} grid cases{" "}
+              {data.manifest.coverage.n_missing === 1 ? "has" : "have"} not
+              finished and {data.manifest.coverage.n_missing === 1 ? "is" : "are"}{" "}
+              skipped rather than interpolated, so the band is a lower bound on
+              its true width — it can only widen as {""}
+              {data.manifest.coverage.n_missing === 1 ? "it lands" : "they land"}
+              .
+              {/* Named outright when there are only a few: at that point the
+                  useful thing is which corner of the grid is absent, not a
+                  percentage that rounds to 100. */}
+              {missingLabels.length > 0 ? (
+                <>
+                  {" "}
+                  Outstanding:{" "}
+                  {missingLabels.map((label, i) => (
+                    <span key={label}>
+                      {i > 0 ? "; " : ""}
+                      <code className="text-xs text-[var(--accent-deep)]">
+                        {label}
+                      </code>
+                    </span>
+                  ))}
+                  .
+                </>
+              ) : null}
             </div>
           ) : null}
 
