@@ -357,29 +357,54 @@ const VARIABLE = "total_ice_per_kgfuel";
 /**
  * How one parameter is being committed.
  *
- * "range" is the chips: any subset, including non-contiguous ones like
- * alpha_C in {0.05, 1.0} -- either extreme but not the middle -- which a
- * two-handle range slider could not express.
+ * "range" is a two-knob slider spanning min..max of the values to include.
+ * "fix" is a one-knob slider committing the parameter to a single value.
  *
- * "fix" is a DETENTED slider: it steps between grid values and cannot land
- * between them. That is a measured decision, not a UI shortcut. Leave-one-out
- * over this cube says a linear interpolant misses interior grid points by a
- * p90 of 11x on FSC and 5.1x on alpha_C, worst near FSC=200 -- which is on the
- * grid precisely because the alpha_C x FSC interaction peaks there, so the one
+ * Both are DETENTED: they step between grid values and cannot land between
+ * them. That is a measured decision, not a UI shortcut. Leave-one-out over
+ * this cube says a linear interpolant misses interior grid points by a p90 of
+ * 11x on FSC and 5.1x on alpha_C, worst near FSC=200 -- which is on the grid
+ * precisely because the alpha_C x FSC interaction peaks there, so the one
  * point placed for physical reasons is the one an interpolant gets most wrong,
  * and not even consistently in one direction (10.3x high at alpha_C=1.0,
  * 0.46x low at 0.1). Every value the page draws is a case pyEPM actually ran.
+ *
+ * The knob slider replaced per-value chips, which could express a
+ * non-contiguous subset such as alpha_C in {0.05, 1.0} -- either extreme but
+ * not the middle. A contiguous span cannot say that. It is the right trade for
+ * a band whose reading is "somewhere between these two bounds", but it is a
+ * real loss of expressiveness rather than a pure simplification.
  */
 type AxisMode = "fix" | "range";
+
+/** Inclusive index span of a range-mode axis: [lo, hi], lo <= hi. */
+type Span = [number, number];
+
+function spanIndices([lo, hi]: Span): number[] {
+  const out: number[] = [];
+  for (let i = lo; i <= hi; i++) out.push(i);
+  return out;
+}
+
+/** The span a selection covers, tolerating the empty and unsorted cases. */
+function spanOf(chosen: number[], n: number): Span {
+  if (chosen.length === 0) return [0, n - 1];
+  return [Math.min(...chosen), Math.max(...chosen)];
+}
 
 export function UncertaintyExplorer() {
   const [data, setData] = useState<CubeData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selection, setSelection] = useState<Selection>({});
   const [modes, setModes] = useState<Record<string, AxisMode>>({});
-  // A subset built with the chips survives a trip through fix mode and back,
-  // so switching modes to look at one value is not destructive.
-  const rangeMemory = useRef<Record<string, number[]>>({});
+  // Raw knob positions, kept alongside the selection rather than derived from
+  // it. Deriving them as min/max would make a knob dragged past its twin snap
+  // backwards mid-drag, because its own value prop would be rewritten to the
+  // other bound. Selection stays the source of truth for the chart.
+  const [knobs, setKnobs] = useState<Record<string, Span>>({});
+  // A span survives a trip through fix mode and back, so switching modes to
+  // look at one value is not destructive.
+  const rangeMemory = useRef<Record<string, Span>>({});
   const [shownPoints, setShownPoints] = useState<Set<string>>(
     () => new Set(MEASURED.map((p) => p.id)),
   );
@@ -393,12 +418,15 @@ export function UncertaintyExplorer() {
         // Everything selected: the widest, most honest default band.
         const initial: Selection = {};
         const initialModes: Record<string, AxisMode> = {};
+        const initialKnobs: Record<string, Span> = {};
         for (const name of d.axisNames.slice(1)) {
           initial[name] = d.manifest.axes[name].map((_, i) => i);
           initialModes[name] = "range";
+          initialKnobs[name] = [0, d.manifest.axes[name].length - 1];
         }
         setSelection(initial);
         setModes(initialModes);
+        setKnobs(initialKnobs);
       })
       .catch((e) => {
         if (!cancelled) setError(String(e?.message ?? e));
@@ -500,57 +528,76 @@ export function UncertaintyExplorer() {
     return lo < hi ? [{ x: lo, unity: lo }, { x: hi, unity: hi }] : [];
   }, [domains]);
 
-  function toggle(axis: string, index: number) {
-    setSelection((prev) => {
-      const current = prev[axis] ?? [];
-      const next = current.includes(index)
-        ? current.filter((i) => i !== index)
-        : [...current, index].sort((a, b) => a - b);
-      return { ...prev, [axis]: next };
-    });
-  }
+  /**
+   * Move one knob. `which` is which INPUT moved, not which bound it ends up
+   * being: the knobs are free to cross, and the span is min..max afterwards.
+   * Clamping them against each other instead would let a knob get stuck
+   * underneath its twin once the span collapses to a single value.
+   */
+  const setKnob = useCallback(
+    (axis: string, which: 0 | 1, index: number) => {
+      setKnobs((prev) => {
+        const current = prev[axis] ?? [index, index];
+        const next: Span = which === 0 ? [index, current[1]] : [current[0], index];
+        setSelection((sel) => ({
+          ...sel,
+          [axis]: spanIndices([
+            Math.min(next[0], next[1]),
+            Math.max(next[0], next[1]),
+          ]),
+        }));
+        return { ...prev, [axis]: next };
+      });
+    },
+    [],
+  );
 
-  function setAll(axis: string, all: boolean) {
-    if (!data) return;
-    setSelection((prev) => ({
-      ...prev,
-      [axis]: all ? data.manifest.axes[axis].map((_, i) => i) : [],
-    }));
-  }
+  /** Widen a range-mode axis back to every value. */
+  const setAll = useCallback(
+    (axis: string) => {
+      if (!data) return;
+      const n = data.manifest.axes[axis].length;
+      setKnobs((prev) => ({ ...prev, [axis]: [0, n - 1] }));
+      setSelection((prev) => ({
+        ...prev,
+        [axis]: spanIndices([0, n - 1]),
+      }));
+    },
+    [data],
+  );
 
   /** Move a detented slider: the selection becomes exactly that grid value. */
   const setFixedIndex = useCallback((axis: string, index: number) => {
     setSelection((prev) => ({ ...prev, [axis]: [index] }));
+    setKnobs((prev) => ({ ...prev, [axis]: [index, index] }));
   }, []);
 
   const setMode = useCallback(
     (axis: string, mode: AxisMode) => {
       if (!data) return;
-      const values = data.manifest.axes[axis];
+      const n = data.manifest.axes[axis].length;
       setSelection((prev) => {
         const current = prev[axis] ?? [];
         if (mode === "fix") {
-          rangeMemory.current[axis] = current;
+          rangeMemory.current[axis] = spanOf(current, n);
           // Land somewhere the reader can defend: what they already had if it
-          // is a single value, otherwise the model default, otherwise the low
-          // end of whatever they had selected.
+          // is a single value, otherwise the model default if the span covers
+          // it, otherwise the low end of the span.
           const baseline = data.manifest.axis_baseline?.[axis]?.index ?? null;
           const index =
             current.length === 1
               ? current[0]
-              : baseline !== null && (current.length === 0 || current.includes(baseline))
+              : baseline !== null && current.includes(baseline)
                 ? baseline
                 : (current[0] ?? baseline ?? 0);
+          setKnobs((k) => ({ ...k, [axis]: [index, index] }));
           return { ...prev, [axis]: [index] };
         }
         const remembered = rangeMemory.current[axis];
-        return {
-          ...prev,
-          [axis]:
-            remembered && remembered.length > 1
-              ? remembered
-              : values.map((_, i) => i),
-        };
+        const span: Span =
+          remembered && remembered[0] !== remembered[1] ? remembered : [0, n - 1];
+        setKnobs((k) => ({ ...k, [axis]: span }));
+        return { ...prev, [axis]: spanIndices(span) };
       });
       setModes((prev) => ({ ...prev, [axis]: mode }));
     },
@@ -561,12 +608,16 @@ export function UncertaintyExplorer() {
     if (!data) return;
     const next: Selection = {};
     const nextModes: Record<string, AxisMode> = {};
+    const nextKnobs: Record<string, Span> = {};
     for (const name of nuisanceAxes) {
-      next[name] = data.manifest.axes[name].map((_, i) => i);
+      const n = data.manifest.axes[name].length;
+      next[name] = spanIndices([0, n - 1]);
       nextModes[name] = "range";
+      nextKnobs[name] = [0, n - 1];
     }
     setSelection(next);
     setModes(nextModes);
+    setKnobs(nextKnobs);
   }
 
   function togglePoint(id: string) {
@@ -586,18 +637,26 @@ export function UncertaintyExplorer() {
     if (!data) return;
     const next: Selection = {};
     const nextModes: Record<string, AxisMode> = {};
+    const nextKnobs: Record<string, Span> = {};
     for (const name of nuisanceAxes) {
       const baseline = data.manifest.axis_baseline?.[name];
       const pinned = baseline && baseline.index !== null;
-      next[name] = pinned
-        ? [baseline.index as number]
-        : data.manifest.axes[name].map((_, i) => i);
-      // An axis with no baseline on the grid stays free, so leave it on the
-      // chips rather than showing a slider parked on an arbitrary value.
+      const n = data.manifest.axes[name].length;
+      if (pinned) {
+        const i = baseline.index as number;
+        next[name] = [i];
+        nextKnobs[name] = [i, i];
+      } else {
+        next[name] = spanIndices([0, n - 1]);
+        nextKnobs[name] = [0, n - 1];
+      }
+      // An axis with no baseline on the grid stays free, rather than parking a
+      // fixed knob on an arbitrary value.
       nextModes[name] = pinned ? "fix" : "range";
     }
     setSelection(next);
     setModes(nextModes);
+    setKnobs(nextKnobs);
   }
 
   if (error) {
@@ -734,10 +793,16 @@ export function UncertaintyExplorer() {
                             data.manifest.axis_baseline?.[axis]?.index ?? null
                           }
                           mode={modes[axis] ?? "range"}
-                          onToggle={toggle}
+                          knobs={
+                            knobs[axis] ?? [
+                              0,
+                              data.manifest.axes[axis].length - 1,
+                            ]
+                          }
                           onSetAll={setAll}
                           onModeChange={setMode}
                           onFixIndex={setFixedIndex}
+                          onKnob={setKnob}
                         />
                       ))}
                     </div>
@@ -747,7 +812,7 @@ export function UncertaintyExplorer() {
 
               <p className="mt-2 text-[0.62rem] leading-snug text-[var(--muted)]">
                 ★ is the model&rsquo;s own default. <b>range</b> shades the band
-                over every value you leave selected; <b>fix</b> commits the
+                over every value between its two knobs; <b>fix</b> commits the
                 parameter to one. EI(soot) is the x-axis and is never fixed.
               </p>
               <p className="mt-1 text-[0.62rem] leading-snug text-[var(--muted)]">
@@ -1061,30 +1126,67 @@ export function UncertaintyExplorer() {
 // One parameter's value chips
 // ---------------------------------------------------------------------------
 
+/** Detent marks under a slider, one per computed value. */
+function Detents({
+  count,
+  activeFrom,
+  activeTo,
+}: {
+  count: number;
+  activeFrom: number;
+  activeTo: number;
+}) {
+  return (
+    <div className="flex justify-between px-[1px]" aria-hidden>
+      {Array.from({ length: count }, (_, i) => (
+        <span
+          key={i}
+          className={[
+            "h-1.5 w-px",
+            i >= activeFrom && i <= activeTo
+              ? "bg-[color:var(--accent)]"
+              : "bg-[color:var(--line)]",
+          ].join(" ")}
+        />
+      ))}
+    </div>
+  );
+}
+
 function AxisCard({
   axis,
   values,
   chosen,
   mode,
+  knobs,
   baselineIndex,
-  onToggle,
   onSetAll,
   onModeChange,
   onFixIndex,
+  onKnob,
 }: {
   axis: string;
   values: number[];
   chosen: number[];
   mode: AxisMode;
+  knobs: Span;
   baselineIndex: number | null;
-  onToggle: (axis: string, index: number) => void;
-  onSetAll: (axis: string, all: boolean) => void;
+  onSetAll: (axis: string) => void;
   onModeChange: (axis: string, mode: AxisMode) => void;
   onFixIndex: (axis: string, index: number) => void;
+  onKnob: (axis: string, which: 0 | 1, index: number) => void;
 }) {
   const isFree = chosen.length === values.length;
   const fixedIndex = chosen.length === 1 ? chosen[0] : 0;
   const label = AXIS_SHORT[axis] ?? axis;
+  const lo = Math.min(knobs[0], knobs[1]);
+  const hi = Math.max(knobs[0], knobs[1]);
+  // The thumb is 13px wide and native range inputs inset the thumb centre by
+  // half of it at each end, so the shaded span has to be laid out in the same
+  // coordinates or it drifts away from the knobs towards the ends.
+  const frac = (i: number) => (values.length > 1 ? i / (values.length - 1) : 0);
+  const spanLeft = `calc(${frac(lo)} * (100% - 13px) + 6.5px)`;
+  const spanWidth = `calc(${frac(hi) - frac(lo)} * (100% - 13px))`;
 
   return (
     <div className="rounded-lg border border-[color:var(--line)] bg-[color:var(--surface-soft)]/60 px-3 py-2">
@@ -1120,11 +1222,9 @@ function AxisCard({
         {AXIS_UNIT[axis] ?? ""}
         {mode === "fix"
           ? " · fixed"
-          : chosen.length === 0
-            ? " · none"
-            : isFree
-              ? " · free"
-              : ` · ${chosen.length}/${values.length}`}
+          : isFree
+            ? " · free"
+            : ` · ${chosen.length}/${values.length}`}
       </div>
 
       {mode === "fix" ? (
@@ -1151,19 +1251,11 @@ function AxisCard({
             aria-valuetext={formatAxisValue(axis, values[fixedIndex])}
             className="mt-1 w-full accent-[color:var(--accent)]"
           />
-          <div className="flex justify-between px-[1px]" aria-hidden>
-            {values.map((_, i) => (
-              <span
-                key={i}
-                className={[
-                  "h-1.5 w-px",
-                  i === fixedIndex
-                    ? "bg-[color:var(--accent)]"
-                    : "bg-[color:var(--line)]",
-                ].join(" ")}
-              />
-            ))}
-          </div>
+          <Detents
+            count={values.length}
+            activeFrom={fixedIndex}
+            activeTo={fixedIndex}
+          />
           <div
             className="flex justify-between text-[0.58rem] tabular-nums text-[var(--muted)]"
             aria-hidden
@@ -1173,45 +1265,71 @@ function AxisCard({
           </div>
         </div>
       ) : (
-        <>
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {values.map((value, index) => {
-              const active = chosen.includes(index);
-              const isBaseline = baselineIndex === index;
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => onToggle(axis, index)}
-                  aria-pressed={active}
-                  title={
-                    isBaseline ? "Model default for this parameter" : undefined
-                  }
-                  className={[
-                    "rounded border px-1.5 py-0.5 text-[0.68rem] tabular-nums transition",
-                    active
-                      ? "border-[color:var(--accent)] bg-[color:var(--accent)] text-white"
-                      : "border-[color:var(--line)] bg-[color:var(--surface)] text-[var(--muted)] hover:border-[color:var(--accent)]",
-                  ].join(" ")}
-                >
-                  {formatAxisValue(axis, value)}
-                  {isBaseline ? (
-                    <span aria-hidden className="ml-0.5 opacity-70">
-                      ★
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
+        <div className="mt-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[0.78rem] font-medium tabular-nums text-[var(--fg)]">
+              {lo === hi
+                ? formatAxisValue(axis, values[lo])
+                : `${formatAxisValue(axis, values[lo])} – ${formatAxisValue(axis, values[hi])}`}
+            </span>
+            {!isFree ? (
+              <button
+                type="button"
+                className="text-[0.6rem] text-[var(--muted)] underline underline-offset-2 hover:text-[var(--accent)]"
+                onClick={() => onSetAll(axis)}
+              >
+                full
+              </button>
+            ) : baselineIndex !== null ? (
+              <span className="text-[0.6rem] text-[var(--muted)]">
+                ★ {formatAxisValue(axis, values[baselineIndex])}
+              </span>
+            ) : null}
           </div>
-          <button
-            type="button"
-            className="mt-1 text-[0.62rem] text-[var(--muted)] underline underline-offset-2 hover:text-[var(--accent)]"
-            onClick={() => onSetAll(axis, !isFree)}
+
+          <div className="range-dual mt-1">
+            {/* Rail and shaded span, drawn under both inputs. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-[6.5px] right-[6.5px] top-1/2 h-1 -translate-y-1/2 rounded-full bg-[color:var(--line)]"
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[color:var(--accent)]"
+              style={{ left: spanLeft, width: spanWidth }}
+            />
+            {([0, 1] as const).map((which) => (
+              <input
+                key={which}
+                type="range"
+                min={0}
+                max={values.length - 1}
+                step={1}
+                value={knobs[which]}
+                onChange={(e) => onKnob(axis, which, Number(e.target.value))}
+                // Which knob is the lower bound follows the values, not the
+                // DOM order, because the two are free to cross.
+                aria-label={`${label} ${
+                  knobs[0] === knobs[1]
+                    ? "bound"
+                    : knobs[which] === lo
+                      ? "lower bound"
+                      : "upper bound"
+                }, ${values.length} computed values`}
+                aria-valuetext={formatAxisValue(axis, values[knobs[which]])}
+                style={{ zIndex: which + 1 }}
+              />
+            ))}
+          </div>
+          <Detents count={values.length} activeFrom={lo} activeTo={hi} />
+          <div
+            className="flex justify-between text-[0.58rem] tabular-nums text-[var(--muted)]"
+            aria-hidden
           >
-            {isFree ? "clear" : "select all"}
-          </button>
-        </>
+            <span>{formatAxisValue(axis, values[0])}</span>
+            <span>{formatAxisValue(axis, values[values.length - 1])}</span>
+          </div>
+        </div>
       )}
     </div>
   );
