@@ -36,7 +36,6 @@ import {
 // colour alone.
 
 const MODEL_BLUE = "#1f6fb2";
-const MODEL_DEEP = "#0b3a63";
 
 const CAMPAIGN_STYLE = {
   "ECLIF3-2": { color: "#d95f02", shape: "square" as const },
@@ -419,14 +418,26 @@ export function UncertaintyExplorer() {
       .then((d) => {
         if (cancelled) return;
         setData(d);
-        // Everything selected: the widest, most honest default band.
+        // Start pinned to the model defaults. Axes without an on-grid default
+        // stay free, because picking an arbitrary fixed value would imply a
+        // default the manifest does not actually define.
         const initial: Selection = {};
         const initialModes: Record<string, AxisMode> = {};
         const initialKnobs: Record<string, Span> = {};
         for (const name of d.axisNames.slice(1)) {
-          initial[name] = d.manifest.axes[name].map((_, i) => i);
-          initialModes[name] = "range";
-          initialKnobs[name] = [0, d.manifest.axes[name].length - 1];
+          const baseline = d.manifest.axis_baseline?.[name];
+          const pinned = baseline && baseline.index !== null;
+          const n = d.manifest.axes[name].length;
+          if (pinned) {
+            const i = baseline.index as number;
+            initial[name] = [i];
+            initialModes[name] = "fix";
+            initialKnobs[name] = [i, i];
+          } else {
+            initial[name] = spanIndices([0, n - 1]);
+            initialModes[name] = "range";
+            initialKnobs[name] = [0, n - 1];
+          }
         }
         setSelection(initial);
         setModes(initialModes);
@@ -914,17 +925,6 @@ export function UncertaintyExplorer() {
                       isAnimationActive={false}
                       connectNulls={false}
                     />
-                    <Line
-                      name="Nominal (all defaults)"
-                      type="monotone"
-                      dataKey="nominal"
-                      stroke={MODEL_DEEP}
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive={false}
-                      connectNulls={false}
-                    />
-
                     {campaignsShown.map((campaign) => (
                       <Scatter
                         key={campaign}
@@ -1436,12 +1436,6 @@ function BandTooltip({
           <dt className="w-16">min</dt>
           <dd className="tabular-nums">{formatSci(row.min)}</dd>
         </div>
-        {row.nominal !== null ? (
-          <div className="flex gap-3">
-            <dt className="w-16">nominal</dt>
-            <dd className="tabular-nums">{formatSci(row.nominal)}</dd>
-          </div>
-        ) : null}
         {Number.isFinite(ratio) ? (
           <div className="flex gap-3">
             <dt className="w-16">spread</dt>
