@@ -289,6 +289,8 @@ const AXIS_SHORT: Record<string, string> = {
   T_amb: "T_amb",
   N0: "N₀",
   tau_m: "τ_m",
+  T_exit: "T_exit",
+  soot_dD: "d/D",
   soot: "EI(soot)",
 };
 
@@ -298,6 +300,8 @@ const AXIS_UNIT: Record<string, string> = {
   T_amb: "ambient temp., K",
   N0: "initial dilution, kg/kg",
   tau_m: "jet mixing time, s",
+  T_exit: "plume exit temp., K",
+  soot_dD: "primary/aggregate ratio",
   soot: "# / kg-fuel",
 };
 
@@ -317,12 +321,12 @@ const AXIS_GROUPS: { title: string; note: string; axes: string[] }[] = [
   {
     title: "Inputs",
     note: "flight and atmospheric conditions",
-    axes: ["FSC", "T_amb", "N0"],
+    axes: ["FSC", "T_amb", "N0", "T_exit"],
   },
   {
     title: "Assumptions",
     note: "model parameters with no measured value",
-    axes: ["alpha_C", "tau_m"],
+    axes: ["alpha_C", "tau_m", "soot_dD"],
   },
 ];
 
@@ -360,13 +364,7 @@ const VARIABLE = "total_ice_per_kgfuel";
  * "fix" is a one-knob slider committing the parameter to a single value.
  *
  * Both are DETENTED: they step between grid values and cannot land between
- * them. That is a measured decision, not a UI shortcut. Leave-one-out over
- * this cube says a linear interpolant misses interior grid points by a p90 of
- * 11x on FSC and 5.1x on alpha_C, worst near FSC=200 -- which is on the grid
- * precisely because the alpha_C x FSC interaction peaks there, so the one
- * point placed for physical reasons is the one an interpolant gets most wrong,
- * and not even consistently in one direction (10.3x high at alpha_C=1.0,
- * 0.46x low at 0.1). Every value the page draws is a case pyEPM actually ran.
+ * them, so every value the page draws is a case pyEPM actually ran.
  *
  * The knob slider replaced per-value chips, which could express a
  * non-contiguous subset such as alpha_C in {0.05, 1.0} -- either extreme but
@@ -837,9 +835,7 @@ export function UncertaintyExplorer() {
               </p>
               <p className="mt-1 text-[0.62rem] leading-snug text-[var(--muted)]">
                 The fix slider steps between computed values and will not stop
-                between them. Nothing here is interpolated: a linear interpolant
-                tested against this cube misses held-out grid points by up to
-                11× on FSC, worst around FSC = 200 where the response peaks.
+                between them. Every value drawn is a case pyEPM actually ran.
               </p>
             </aside>
 

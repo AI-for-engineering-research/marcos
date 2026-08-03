@@ -1,12 +1,14 @@
 {
   "format": "pyepm-uncertainty-cube/v1",
-  "generated_utc": "2026-07-28T14:16:40.624805+00:00",
+  "generated_utc": "2026-08-03T15:03:18.052586+00:00",
   "binary_file": "uncertainty_v1.bin",
   "dtype": "float32",
   "byte_order": "little",
   "shape_order": [
     "variable",
     "soot",
+    "T_exit",
+    "soot_dD",
     "alpha_C",
     "FSC",
     "T_amb",
@@ -16,13 +18,15 @@
   "shape": [
     8,
     15,
+    2,
+    3,
     4,
     5,
     7,
     3,
-    3
+    4
   ],
-  "n_bytes_expected": 604800,
+  "n_bytes_expected": 4838400,
   "variables": [
     "total_ice_per_kgfuel",
     "soot_ice_per_kgfuel",
@@ -62,6 +66,15 @@
       4393970560760786.0,
       1e+16
     ],
+    "T_exit": [
+      600.0,
+      500.0
+    ],
+    "soot_dD": [
+      1.0,
+      0.41,
+      0.2
+    ],
     "alpha_C": [
       1.0,
       0.4,
@@ -90,6 +103,7 @@
       70.0
     ],
     "tau_m": [
+      0.003,
       0.007,
       0.01,
       0.014
@@ -97,6 +111,8 @@
   },
   "axis_scaling_hint": {
     "soot": "log",
+    "T_exit": "linear",
+    "soot_dD": "linear",
     "alpha_C": "linear",
     "FSC": "log",
     "T_amb": "linear",
@@ -105,6 +121,8 @@
   },
   "axis_keys": {
     "soot": "Soot [#/kg_fuel] (double)",
+    "T_exit": "Plume exit temp. [K] (double)",
+    "soot_dD": "Soot primary particle to aggregate diameter ratio [d/D] (double)",
     "alpha_C": "Water vapour mass accommodation coefficient [alpha_C, -] (double)",
     "FSC": "FSC [ppm] (double)",
     "T_amb": "Temperature [K] (double)",
@@ -112,6 +130,14 @@
     "tau_m": "Jet mixing time tau_m [s] (double)"
   },
   "axis_baseline": {
+    "T_exit": {
+      "value": 600.0,
+      "index": 0
+    },
+    "soot_dD": {
+      "value": 1.0,
+      "index": 0
+    },
     "alpha_C": {
       "value": 1.0,
       "index": 0
@@ -130,7 +156,7 @@
     },
     "tau_m": {
       "value": 0.01,
-      "index": 1
+      "index": 2
     },
     "soot": {
       "value": 1000000000000.0,
@@ -159,15 +185,15 @@
       }
     }
   },
-  "decomposition_max_relative_residual": 1.1920666054265894e-07,
+  "decomposition_max_relative_residual": 1.7272481045438326e-07,
   "charged_subset_max_relative_residual": 1.0,
   "source_campaign": {
-    "name": "uncertainty_6d",
+    "name": "uncertainty_8d",
     "array_job_id": "614268",
     "run_dir": "/home/mlogrono/data/mlogrono/slurm_jobs/pyEPM/spring2026/uncertainty_analysis/uncertainty_6d",
-    "submitted_utc": "2026-07-28T01:17:45.599662+00:00",
-    "n_cases": 18900,
-    "pyepm_git_sha": "25ba63510c4fb8ae0e5711ae3a22332d57011be2",
+    "submitted_utc": "2026-07-29T22:04:32.751239+00:00",
+    "n_cases": 151200,
+    "pyepm_git_sha": "0c2d210b24fecd52be7efb69d01946f9da73aa39",
     "pyepm_git_dirty": true,
     "base_input_sha256": "cc095f859dcca02beab92869eac758f24e981fe28e6efb76fe4d1bacb1888a92",
     "fixed": [
@@ -209,11 +235,11 @@
       }
     ]
   },
-  "gather_pyepm_git_sha": "b1677f7635e5f01ff7a2b6e9ddef905989cd7d2e",
-  "campaign_manifest_sha256": "39e6ef6bf367cddd671abef7038de2fa0e3eb7586651429dbf48140aec31d73e",
+  "gather_pyepm_git_sha": "0c2d210b24fecd52be7efb69d01946f9da73aa39",
+  "campaign_manifest_sha256": "f423caa9be6d6901f5a436cbbb7ab5a0949ce6af7773ebbd57b5bdeae5bb032f",
   "coverage": {
-    "n_cases": 18900,
-    "n_present": 18900,
+    "n_cases": 151200,
+    "n_present": 151200,
     "n_missing": 0,
     "complete": true,
     "missing_case_paths": [],
