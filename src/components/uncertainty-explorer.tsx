@@ -759,9 +759,9 @@ export function UncertaintyExplorer() {
             </div>
           ) : null}
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
             {/* ---------------- parameters, left ---------------- */}
-            <aside className="lg:w-[15rem] lg:shrink-0">
+            <aside className="xl:w-[31rem] xl:shrink-0">
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent-deep)]">
                   Parameters
@@ -788,9 +788,9 @@ export function UncertaintyExplorer() {
                 </button>
               </div>
 
-              <div className="mt-3 space-y-3.5">
+              <div className="mt-3 grid gap-3.5 md:grid-cols-2">
                 {axisGroups.map((group) => (
-                  <div key={group.title}>
+                  <div key={group.title} className="min-w-0">
                     <div className="px-0.5 pb-1">
                       <span className="text-[0.7rem] font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
                         {group.title}
@@ -965,7 +965,7 @@ export function UncertaintyExplorer() {
             </div>
 
             {/* ---------------- measurements, right ---------------- */}
-            <aside className="lg:w-[16.5rem] lg:shrink-0">
+            <aside className="xl:w-[12rem] xl:shrink-0">
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent-deep)]">
                   Measurements
