@@ -6,7 +6,6 @@ import {
   CartesianGrid,
   ComposedChart,
   ErrorBar,
-  Legend,
   Line,
   ResponsiveContainer,
   Scatter,
@@ -834,7 +833,7 @@ export function UncertaintyExplorer() {
                 <ResponsiveContainer width="100%" height={440}>
                   <ComposedChart
                     data={band}
-                    margin={{ top: 12, right: 16, bottom: 56, left: 12 }}
+                    margin={{ top: 12, right: 16, bottom: 44, left: 12 }}
                   >
                     <CartesianGrid
                       stroke="var(--line)"
@@ -869,13 +868,6 @@ export function UncertaintyExplorer() {
                       content={<BandTooltip nCells={nCells} />}
                       cursor={{ stroke: "var(--muted)", strokeDasharray: "3 3" }}
                     />
-                    <Legend
-                      verticalAlign="bottom"
-                      align="center"
-                      height={34}
-                      wrapperStyle={{ fontSize: 12, color: "var(--muted)" }}
-                    />
-
                     {/* Drawn first so the band and the measurements sit on top
                         of it: it is a reference, not a result. Its own
                         two-point dataset, so the ends land on the frame. */}
@@ -941,6 +933,22 @@ export function UncertaintyExplorer() {
                   </ComposedChart>
                 </ResponsiveContainer>
 
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-[var(--muted)]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-4 rounded-sm bg-[color:var(--accent)] opacity-20 ring-1 ring-[color:var(--accent)]" />
+                    Model range
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-px w-5 border-t border-dashed border-[color:var(--muted)]" />
+                    AEI(ice) = EI(soot)
+                  </span>
+                  {campaignsShown.map((campaign) => (
+                    <span key={campaign} className="inline-flex items-center gap-1.5">
+                      <MarkerGlyph campaign={campaign} />
+                      {campaign}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
