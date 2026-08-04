@@ -243,12 +243,12 @@ function XAxisTitle({ viewBox }: AxisLabelProps) {
   return (
     <text
       x={x + width / 2}
-      y={y + height + 36}
+      y={y + height + 38}
       textAnchor="middle"
       fill="var(--muted)"
-      fontSize={13}
+      fontSize={15}
     >
-      {mathRuns(X_TITLE, 13)}
+      {mathRuns(X_TITLE, 15)}
     </text>
   );
 }
@@ -263,10 +263,10 @@ function YAxisTitle({ viewBox }: AxisLabelProps) {
       y={cy}
       textAnchor="middle"
       fill="var(--muted)"
-      fontSize={13}
+      fontSize={15}
       transform={`rotate(-90 ${cx} ${cy})`}
     >
-      {mathRuns(Y_TITLE, 13)}
+      {mathRuns(Y_TITLE, 15)}
     </text>
   );
 }
@@ -848,7 +848,7 @@ export function UncertaintyExplorer() {
                       ticks={decadeTicks(domains.x[0], domains.x[1])}
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
-                      tick={{ fontSize: 12, fill: "var(--muted)" }}
+                      tick={{ fontSize: 14, fill: "var(--muted)" }}
                       allowDataOverflow
                       label={<XAxisTitle />}
                     />
@@ -859,8 +859,8 @@ export function UncertaintyExplorer() {
                       ticks={decadeTicks(domains.y[0], domains.y[1])}
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
-                      tick={{ fontSize: 12, fill: "var(--muted)" }}
-                      width={64}
+                      tick={{ fontSize: 14, fill: "var(--muted)" }}
+                      width={72}
                       allowDataOverflow
                       label={<YAxisTitle />}
                     />
