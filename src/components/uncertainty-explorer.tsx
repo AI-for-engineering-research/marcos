@@ -848,7 +848,7 @@ export function UncertaintyExplorer() {
                       ticks={decadeTicks(domains.x[0], domains.x[1])}
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
-                      tick={{ fontSize: 14, fill: "var(--muted)" }}
+                      tick={{ fontSize: 20, fill: "var(--muted)" }}
                       allowDataOverflow
                       label={<XAxisTitle />}
                     />
@@ -859,8 +859,8 @@ export function UncertaintyExplorer() {
                       ticks={decadeTicks(domains.y[0], domains.y[1])}
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
-                      tick={{ fontSize: 14, fill: "var(--muted)" }}
-                      width={72}
+                      tick={{ fontSize: 20, fill: "var(--muted)" }}
+                      width={86}
                       allowDataOverflow
                       label={<YAxisTitle />}
                     />
@@ -933,7 +933,7 @@ export function UncertaintyExplorer() {
                   </ComposedChart>
                 </ResponsiveContainer>
 
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-[var(--muted)]">
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-[var(--muted)]">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-4 rounded-sm bg-[color:var(--accent)] opacity-20 ring-1 ring-[color:var(--accent)]" />
                     Model range
