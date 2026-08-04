@@ -28,15 +28,14 @@ import {
 // ---------------------------------------------------------------------------
 // Palette
 // ---------------------------------------------------------------------------
-// Model blue is the site accent. The three measurement hues were checked with
-// the dataviz validator against that blue and each other (all six checks pass
-// in light mode: worst adjacent CVD deltaE 17.8 deutan, normal-vision 26.8).
-// Campaign is additionally encoded by marker shape, so identity never rests on
-// colour alone.
+// Model blue is the site accent. Campaign is additionally encoded by marker
+// shape, so identity never rests on colour alone.
 
 const MODEL_BLUE = "#1f6fb2";
 
 const CAMPAIGN_STYLE = {
+  ECLIF1: { color: "#882255", shape: "circle" as const },
+  ECLIF2: { color: "#44aa99", shape: "square" as const },
   "ECLIF3-2": { color: "#d95f02", shape: "square" as const },
   "ECLIF3-1": { color: "#8e44ad", shape: "triangle" as const },
   VOLCAN: { color: "#117733", shape: "circle" as const },
@@ -49,22 +48,17 @@ type CampaignName = keyof typeof CAMPAIGN_STYLE;
 // ---------------------------------------------------------------------------
 // Ported from pyEPM scripts/plot_alpha_C_karcher.py:CASES.
 //
-// ECLIF3 from Dischl et al. (2025) Fig. 4b; VOLCAN from Voigt et al. (2026)
-// Nature 652 Fig. 2, lean-burn (low-soot) points only.
+// ECLIF1/2 and the two ECLIF3-1 points are from Yu et al. (2024) Table 1.
+// The three ECLIF3-2 points are from Dischl et al. (2025) Fig. 4b. VOLCAN is
+// from Voigt et al. (2026) Nature 652 Fig. 2, lean-burn (low-soot) points only.
 //
-// Coordinates and error bars were digitised from the published figures with a
-// pixel-calibration script. They are approximate -- a few percent on the linear
-// Dischl axes, and read off log-log axes for Voigt. Nulls are directions where
-// the published figure shows no bar, not zero-width uncertainty.
+// Table values are entered directly. Figure-only coordinates and error bars
+// were digitised with a pixel-calibration script. Nulls are directions where the
+// published figure shows no bar, not zero-width uncertainty.
 
-// FSC and T_amb are the conditions each flight was flown and modelled at, taken
-// from pyEPM data/uncertainty_analysis/alpha_C/ice_extract.csv -- the per-case
-// ambient conditions the alpha_C campaign ran, which came from the papers'
-// reported values. They are NOT swept quantities here: they say where on the
-// band's parameter space each measurement sits, which is the point of listing
-// them beside the chart.
-//
-// All seven share pressure 22,919.5 Pa and RHi 110%.
+// FSC and T_amb are the conditions each flight was flown and modelled at. They
+// are NOT swept quantities here: they say where on the band's parameter space
+// each measurement sits, which is the point of listing them beside the chart.
 
 type MeasuredPoint = {
   id: string;
@@ -81,6 +75,30 @@ type MeasuredPoint = {
 };
 
 const MEASURED: MeasuredPoint[] = [
+  {
+    id: "eclif1-jeta1", label: "Jet A-1", campaign: "ECLIF1",
+    fsc: 1350, tAmb: 215,
+    x: 4.9e15, y: 4.2e15,
+    xLo: 4.3e15, xHi: 5.5e15, yLo: 3.6e15, yHi: 4.8e15,
+  },
+  {
+    id: "eclif1-ft", label: "Jet A-1/FT-SPK blend", campaign: "ECLIF1",
+    fsc: 570, tAmb: 220,
+    x: 2.5e15, y: 2.0e15,
+    xLo: 2.3e15, xHi: 2.7e15, yLo: 1.8e15, yHi: 2.2e15,
+  },
+  {
+    id: "eclif2-hefa49", label: "Jet A-1/HEFA-SPK blend", campaign: "ECLIF2",
+    fsc: 70, tAmb: 218,
+    x: 2.7e15, y: 2.3e15,
+    xLo: 2.1e15, xHi: 3.3e15, yLo: 2.1e15, yHi: 2.5e15,
+  },
+  {
+    id: "eclif2-hefa30", label: "Low-S HEFA-SPK blend", campaign: "ECLIF2",
+    fsc: 4.1, tAmb: 216,
+    x: 2.3e15, y: 1.1e15,
+    xLo: 1.7e15, xHi: 2.9e15, yLo: 0.7e15, yHi: 1.5e15,
+  },
   {
     id: "eclif32-blend", label: "Med-S blend", campaign: "ECLIF3-2",
     fsc: 505, tAmb: 215.8,
@@ -102,14 +120,14 @@ const MEASURED: MeasuredPoint[] = [
   {
     id: "eclif31-jeta1", label: "Jet A-1", campaign: "ECLIF3-1",
     fsc: 211, tAmb: 213.3,
-    x: 0.71e15, y: 0.88e15,
-    xLo: 0.631e15, xHi: 0.843e15, yLo: 0.561e15, yHi: 1.527e15,
+    x: 0.95e15, y: 0.78e15,
+    xLo: 0.65e15, xHi: 1.25e15, yLo: 0.38e15, yHi: 1.18e15,
   },
   {
     id: "eclif31-hefa", label: "HEFA-SPK", campaign: "ECLIF3-1",
     fsc: 7, tAmb: 213.8,
-    x: 0.501e15, y: 0.305e15,
-    xLo: 0.452e15, xHi: 0.603e15, yLo: 0.17e15, yHi: 0.547e15,
+    x: 0.61e15, y: 0.34e15,
+    xLo: 0.54e15, xHi: 0.68e15, yLo: 0.19e15, yHi: 0.49e15,
   },
   {
     id: "volcan-hefa", label: "HEFA blend (lean)", campaign: "VOLCAN",
@@ -125,7 +143,13 @@ const MEASURED: MeasuredPoint[] = [
   },
 ];
 
-const CAMPAIGN_ORDER: CampaignName[] = ["ECLIF3-2", "ECLIF3-1", "VOLCAN"];
+const CAMPAIGN_ORDER: CampaignName[] = [
+  "ECLIF1",
+  "ECLIF2",
+  "ECLIF3-2",
+  "ECLIF3-1",
+  "VOLCAN",
+];
 
 /** Recharts ErrorBar wants [minusOffset, plusOffset], not absolute caps. */
 function errorOffsets(
