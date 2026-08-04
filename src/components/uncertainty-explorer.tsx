@@ -848,7 +848,7 @@ export function UncertaintyExplorer() {
                       ticks={decadeTicks(domains.x[0], domains.x[1])}
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
-                      tick={{ fontSize: 20, fill: "var(--muted)" }}
+                      tick={{ fontSize: 18, fill: "var(--muted)" }}
                       allowDataOverflow
                       label={<XAxisTitle />}
                     />
@@ -859,8 +859,8 @@ export function UncertaintyExplorer() {
                       ticks={decadeTicks(domains.y[0], domains.y[1])}
                       tickFormatter={formatPow10}
                       stroke="var(--muted)"
-                      tick={{ fontSize: 20, fill: "var(--muted)" }}
-                      width={86}
+                      tick={{ fontSize: 18, fill: "var(--muted)" }}
+                      width={82}
                       allowDataOverflow
                       label={<YAxisTitle />}
                     />
@@ -896,8 +896,8 @@ export function UncertaintyExplorer() {
                       type="monotone"
                       dataKey={(row: BandPoint) => [row.min, row.max]}
                       stroke={MODEL_BLUE}
-                      strokeWidth={1}
-                      strokeOpacity={0.5}
+                      strokeWidth={2}
+                      strokeOpacity={0.65}
                       fill={MODEL_BLUE}
                       fillOpacity={0.16}
                       isAnimationActive={false}
