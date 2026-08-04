@@ -463,7 +463,6 @@ export function UncertaintyExplorer() {
   );
 
   const nCells = data ? selectionSize(data, selection) : 0;
-  const nMissing = band.reduce((acc, p) => acc + p.nMissing, 0);
   const provisional = Boolean(data && !data.manifest.coverage.complete);
 
   // Name the outstanding cases when there are few enough to be worth reading.
@@ -827,16 +826,6 @@ export function UncertaintyExplorer() {
                 ))}
               </div>
 
-              <p className="mt-2 text-[0.62rem] leading-snug text-[var(--muted)]">
-                ★ is the model&rsquo;s own default. <b>range</b> shades the band
-                over every value between its two knobs, which stay at least one
-                step apart; <b>fix</b> commits the parameter to a single value.
-                EI(soot) is the x-axis and is never fixed.
-              </p>
-              <p className="mt-1 text-[0.62rem] leading-snug text-[var(--muted)]">
-                The fix slider steps between computed values and will not stop
-                between them. Every value drawn is a case pyEPM actually ran.
-              </p>
             </aside>
 
             {/* ---------------- plot, centre ---------------- */}
@@ -845,7 +834,7 @@ export function UncertaintyExplorer() {
                 <ResponsiveContainer width="100%" height={440}>
                   <ComposedChart
                     data={band}
-                    margin={{ top: 12, right: 16, bottom: 44, left: 12 }}
+                    margin={{ top: 12, right: 16, bottom: 56, left: 12 }}
                   >
                     <CartesianGrid
                       stroke="var(--line)"
@@ -881,9 +870,9 @@ export function UncertaintyExplorer() {
                       cursor={{ stroke: "var(--muted)", strokeDasharray: "3 3" }}
                     />
                     <Legend
-                      verticalAlign="top"
-                      align="left"
-                      height={30}
+                      verticalAlign="bottom"
+                      align="center"
+                      height={34}
                       wrapperStyle={{ fontSize: 12, color: "var(--muted)" }}
                     />
 
@@ -952,15 +941,6 @@ export function UncertaintyExplorer() {
                   </ComposedChart>
                 </ResponsiveContainer>
 
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  Band = min/max over {nCells.toLocaleString()} parameter
-                  combination{nCells === 1 ? "" : "s"} at each soot value
-                  {nMissing > 0
-                    ? `, of which ${nMissing.toLocaleString()} are still running and were skipped`
-                    : ""}
-                  . This is a <em>range</em>, not a confidence interval — see
-                  below.
-                </p>
               </div>
             </div>
 
@@ -1055,11 +1035,6 @@ export function UncertaintyExplorer() {
                 })}
               </div>
 
-              <p className="mt-2 text-[0.62rem] leading-snug text-[var(--muted)]">
-                FSC and T are the conditions each flight was flown at, not swept
-                quantities — they say where in the band&rsquo;s parameter space
-                the point sits. Coordinates and bars are digitised; see below.
-              </p>
             </aside>
           </div>
         </div>
