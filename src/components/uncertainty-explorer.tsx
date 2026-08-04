@@ -884,6 +884,7 @@ export function UncertaintyExplorer() {
                       activeDot={false}
                       isAnimationActive={false}
                       legendType="plainline"
+                      tooltipType="none"
                     />
 
                     {/* A range Area takes [lo, hi] per row, which keeps both
@@ -913,6 +914,7 @@ export function UncertaintyExplorer() {
                         fill={CAMPAIGN_STYLE[campaign].color}
                         shape={CAMPAIGN_STYLE[campaign].shape}
                         isAnimationActive={false}
+                        tooltipType="none"
                       >
                         <ErrorBar
                           dataKey="yErr"
@@ -1355,7 +1357,7 @@ function MarkerGlyph({ campaign }: { campaign: CampaignName }) {
 // Tooltip
 // ---------------------------------------------------------------------------
 
-type TooltipPayloadItem = { payload?: BandPoint & Partial<MeasuredPoint> };
+type TooltipPayloadItem = { payload?: BandPoint };
 
 function BandTooltip({
   active,
@@ -1368,34 +1370,8 @@ function BandTooltip({
 }) {
   if (!active || !payload || payload.length === 0) return null;
 
-  // A measured point wins the tooltip when the cursor is on one: it carries a
-  // label, which the band rows never do.
-  const measured = payload.find((item) => item.payload?.label);
-  if (measured?.payload) {
-    const p = measured.payload as MeasuredPoint;
-    return (
-      <div className="rounded-md border border-[color:var(--line)] bg-[color:var(--surface)] px-3 py-2 text-xs shadow-sm">
-        <div className="font-medium text-[var(--accent-deep)]">
-          {p.campaign} — {p.label}
-        </div>
-        <div className="mt-1 text-[var(--muted)]">
-          FSC {p.fsc} ppm · T_amb {p.tAmb} K
-        </div>
-        <div className="text-[var(--muted)]">
-          EI(soot) {formatSci(p.x)}
-          {p.xLo !== null || p.xHi !== null
-            ? `  [${formatSci(p.xLo)} – ${formatSci(p.xHi)}]`
-            : ""}
-        </div>
-        <div className="text-[var(--muted)]">
-          AEI(ice) {formatSci(p.y)}
-          {p.yLo !== null || p.yHi !== null
-            ? `  [${formatSci(p.yLo)} – ${formatSci(p.yHi)}]`
-            : ""}
-        </div>
-      </div>
-    );
-  }
+  // Measurement series opt out of the tooltip; the tracker should follow only
+  // the model band, not jump to individual measured points.
 
   const row = payload[0]?.payload as BandPoint | undefined;
   if (!row || !Number.isFinite(row.min)) return null;
