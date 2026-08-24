@@ -8,6 +8,7 @@ const navItems = [
   { href: "/flowchart", label: "Flowchart" },
   { href: "/sensitivity", label: "Sensitivity" },
   { href: "/uncertainty", label: "Uncertainty" },
+  { href: "/apcemm", label: "APCEMM" },
   { href: "/about", label: "About" },
   { href: "/reflections", label: "Reflections" },
 ];
