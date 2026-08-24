@@ -28,6 +28,12 @@ import {
 // was built to avoid.
 
 const FRAME_RATES = [3, 6, 12] as const;
+
+// Panels are drawn WIDER than their raster's 256 x 96, which flattens them
+// toward the window's true 65:1 proportions and is what lets all ten fit on one
+// screen. The canvas keeps its own resolution; only the box it is stretched
+// into changes, so this is a display choice, not a resampling.
+const PANEL_ASPECT = 4.0;
 const DEFAULT_SOOT_EI = 1e15; // where modern engines sit; the slider moves off it
 
 type PanelId = { rhiIndex: number; fscIndex: number };
@@ -233,11 +239,11 @@ export function ApcemmMovie() {
       eyebrow="APCEMM"
       title="Where the ice goes, over twenty hours"
       description={
-        "Ten APCEMM runs playing at once. Each panel is a cross-section of one " +
-        "contrail, sliced across the flight path. Rows are fuel sulfur content, " +
-        "columns are ambient humidity, and the slider sets the soot number every " +
-        "panel is emitting. Colour is ice water content on a log scale; a panel " +
-        "that empties out has dissipated."
+        "Ten APCEMM runs playing at once, each a cross-section of one contrail " +
+        "sliced across the flight path. Rows are fuel sulfur content, columns " +
+        "are ambient humidity, and one slider sets the soot every panel emits. " +
+        "Colour is ice water content, log scale; a panel that empties has " +
+        "dissipated."
       }
     />
   );
@@ -264,179 +270,176 @@ export function ApcemmMovie() {
 
   const soot = manifest.axes.soot_ei_per_kg;
   const hours = manifest.axes.time_hours[frame];
-  const { x_min_m, x_max_m, y_min_m, y_max_m, nx, ny } = manifest.window;
+  const { x_min_m, x_max_m, y_min_m, y_max_m } = manifest.window;
   const spanKm = (x_max_m - x_min_m) / 1000;
   const spanM = y_max_m - y_min_m;
-  const exaggeration =
-    (x_max_m - x_min_m) / nx / ((y_max_m - y_min_m) / ny);
+  const exaggeration = (x_max_m - x_min_m) / (y_max_m - y_min_m) / PANEL_ASPECT;
 
   return (
     <div className="flex flex-col">
       {intro}
 
-      <div className="border-t px-0 py-8 editorial-rule sm:py-10">
-        {/* ---------------- transport ---------------- */}
-        <div className="flex flex-col gap-4 rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-soft)]/60 px-4 py-4 sm:px-5">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <button
-              type="button"
-              onClick={() => setPlaying((on) => !on)}
-              className="rounded-full border border-[color:var(--accent)] px-4 py-1.5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--accent-deep)] transition hover:bg-[color:var(--accent)]/10"
-            >
-              {playing ? "Pause" : "Play"}
-            </button>
+      <div className="border-t px-0 py-7 editorial-rule">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          {/* ---------------- controls, left ---------------- */}
+          <aside className="lg:w-[17.5rem] lg:shrink-0">
+            <div className="flex flex-col gap-3.5 rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-soft)]/60 px-4 py-4">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPlaying((on) => !on)}
+                  className="rounded-full border border-[color:var(--accent)] px-4 py-1.5 text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--accent-deep)] transition hover:bg-[color:var(--accent)]/10"
+                >
+                  {playing ? "Pause" : "Play"}
+                </button>
+                <div className="flex items-center gap-1">
+                  {FRAME_RATES.map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => setFps(rate)}
+                      aria-pressed={fps === rate}
+                      className={[
+                        "rounded-full border px-2 py-0.5 text-[0.66rem] tabular-nums transition",
+                        fps === rate
+                          ? "border-[color:var(--accent)] text-[var(--accent-deep)]"
+                          : "border-[color:var(--line)] text-[var(--muted)] hover:border-[color:var(--accent)]",
+                      ].join(" ")}
+                    >
+                      {rate}×
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-medium tabular-nums tracking-[-0.03em] text-[var(--accent-deep)]">
-                {formatHours(hours)}
-              </span>
-              <span className="text-[0.68rem] uppercase tracking-[0.16em] text-[var(--muted)]">
-                after formation
-              </span>
+              <div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-medium tabular-nums tracking-[-0.03em] text-[var(--accent-deep)]">
+                    {formatHours(hours)}
+                  </span>
+                  <span className="text-[0.62rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                    after formation
+                  </span>
+                </div>
+                <label className="block">
+                  <span className="sr-only">Time since formation</span>
+                  <input
+                    type="range"
+                    className="slider-lg"
+                    min={0}
+                    max={nFrames - 1}
+                    step={1}
+                    value={frame}
+                    onChange={(event) => {
+                      setPlaying(false);
+                      setFrame(Number(event.target.value));
+                    }}
+                  />
+                  <span className="flex justify-between text-[0.6rem] tabular-nums text-[var(--muted)]">
+                    <span>0 h</span>
+                    <span>{manifest.cap_hours} h cap</span>
+                  </span>
+                </label>
+              </div>
+
+              <label className="block border-t border-[color:var(--line)] pt-3">
+                <span className="block text-[0.66rem] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+                  Soot emissions, EI
+                </span>
+                <span className="block text-sm tabular-nums text-[var(--accent-deep)]">
+                  {formatSci(soot[sootIndex])} / kg fuel
+                  {loadingSoot ? (
+                    <span className="ml-2 text-[0.62rem] uppercase tracking-[0.14em] text-[var(--muted)]">
+                      loading…
+                    </span>
+                  ) : null}
+                </span>
+                <input
+                  type="range"
+                  className="slider-lg"
+                  min={0}
+                  max={soot.length - 1}
+                  step={1}
+                  value={sootIndex}
+                  onChange={(event) => setSootIndex(Number(event.target.value))}
+                />
+                <span className="flex justify-between text-[0.6rem] tabular-nums text-[var(--muted)]">
+                  <span>{formatSci(soot[0], 0)}</span>
+                  <span>{formatSci(soot[soot.length - 1], 0)}</span>
+                </span>
+              </label>
             </div>
 
-            <div className="ml-auto flex items-center gap-1.5">
-              {FRAME_RATES.map((rate) => (
-                <button
-                  key={rate}
-                  type="button"
-                  onClick={() => setFps(rate)}
-                  aria-pressed={fps === rate}
-                  className={[
-                    "rounded-full border px-2.5 py-1 text-[0.68rem] tabular-nums transition",
-                    fps === rate
-                      ? "border-[color:var(--accent)] text-[var(--accent-deep)]"
-                      : "border-[color:var(--line)] text-[var(--muted)] hover:border-[color:var(--accent)]",
-                  ].join(" ")}
+            <ColourBar manifest={manifest} />
+
+            <p className="mt-4 text-[0.64rem] leading-relaxed text-[var(--muted)]">
+              Every run is at an ambient temperature of {manifest.t_amb_k} K, and
+              every panel shares one fixed window — {spanKm.toFixed(0)} km across
+              the flight path by {spanM.toFixed(0)} m of depth — so a shape in one
+              panel means the same thing in all ten. The vertical axis is
+              stretched about {exaggeration.toFixed(0)}× relative to the
+              horizontal; a real contrail at 20 h is far flatter than it looks
+              here. Zero on the vertical axis is the flight level, and the whole
+              sheet sinks as the ice sediments.
+            </p>
+          </aside>
+
+          {/* ---------------- the grid, right ---------------- */}
+          <div className="min-w-0 flex-1">
+            <div className="grid grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1.5">
+              <div />
+              {manifest.axes.rhi_percent.map((rhi) => (
+                <div
+                  key={rhi}
+                  className="text-center text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--accent-deep)]"
                 >
-                  {rate}×
-                </button>
+                  RHi {rhi}%
+                </div>
+              ))}
+
+              {manifest.axes.fsc_ppm.map((fsc, fscIndex) => (
+                <FscRow
+                  key={fsc}
+                  fsc={fsc}
+                  fscIndex={fscIndex}
+                  manifest={manifest}
+                  scalars={scalars}
+                  sootIndex={sootIndex}
+                  frame={frame}
+                  registerCanvas={(rhiIndex, node) => {
+                    canvases.current[fscIndex * 2 + rhiIndex] = node;
+                  }}
+                  onHover={onPanelHover}
+                  onLeave={() => setHover(null)}
+                />
+              ))}
+
+              <div />
+              {manifest.axes.rhi_percent.map((rhi) => (
+                <div
+                  key={`axis-${rhi}`}
+                  className="flex justify-between text-[0.6rem] tabular-nums text-[var(--muted)]"
+                >
+                  <span>{(x_min_m / 1000).toFixed(0)} km</span>
+                  <span>across flight path</span>
+                  <span>+{(x_max_m / 1000).toFixed(0)} km</span>
+                </div>
               ))}
             </div>
           </div>
-
-          <label className="block">
-            <span className="sr-only">Time since formation</span>
-            <input
-              type="range"
-              className="slider-lg"
-              min={0}
-              max={nFrames - 1}
-              step={1}
-              value={frame}
-              onChange={(event) => {
-                setPlaying(false);
-                setFrame(Number(event.target.value));
-              }}
-            />
-            <span className="flex justify-between text-[0.62rem] tabular-nums text-[var(--muted)]">
-              <span>0 h</span>
-              <span>{manifest.cap_hours} h cap</span>
-            </span>
-          </label>
-
-          <label className="block border-t border-[color:var(--line)] pt-3">
-            <span className="flex flex-wrap items-baseline justify-between gap-2">
-              <span className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-                Soot emissions, EI
-              </span>
-              <span className="text-sm tabular-nums text-[var(--accent-deep)]">
-                {formatSci(soot[sootIndex])} particles / kg fuel
-                {loadingSoot ? (
-                  <span className="ml-2 text-[0.68rem] uppercase tracking-[0.14em] text-[var(--muted)]">
-                    loading…
-                  </span>
-                ) : null}
-              </span>
-            </span>
-            <input
-              type="range"
-              className="slider-lg"
-              min={0}
-              max={soot.length - 1}
-              step={1}
-              value={sootIndex}
-              onChange={(event) => setSootIndex(Number(event.target.value))}
-            />
-            <span className="flex justify-between text-[0.62rem] tabular-nums text-[var(--muted)]">
-              <span>{formatSci(soot[0], 0)}</span>
-              <span>{formatSci(soot[soot.length - 1], 0)}</span>
-            </span>
-          </label>
         </div>
 
-        {/* ---------------- the grid ---------------- */}
-        <div className="mt-7">
-          <div className="grid grid-cols-[auto_1fr_1fr] gap-x-3 gap-y-1 sm:gap-x-4">
-            <div />
-            {manifest.axes.rhi_percent.map((rhi) => (
-              <div
-                key={rhi}
-                className="pb-1 text-center text-[0.72rem] font-medium uppercase tracking-[0.16em] text-[var(--accent-deep)]"
-              >
-                RHi {rhi}%
-              </div>
-            ))}
-
-            {manifest.axes.fsc_ppm.map((fsc, fscIndex) => (
-              <FscRow
-                key={fsc}
-                fsc={fsc}
-                fscIndex={fscIndex}
-                manifest={manifest}
-                scalars={scalars}
-                sootIndex={sootIndex}
-                frame={frame}
-                registerCanvas={(rhiIndex, node) => {
-                  canvases.current[fscIndex * 2 + rhiIndex] = node;
-                }}
-                onHover={onPanelHover}
-                onLeave={() => setHover(null)}
-              />
-            ))}
-
-            <div />
-            {manifest.axes.rhi_percent.map((rhi) => (
-              <div
-                key={`axis-${rhi}`}
-                className="flex justify-between pt-1 text-[0.62rem] tabular-nums text-[var(--muted)]"
-              >
-                <span>{(x_min_m / 1000).toFixed(0)} km</span>
-                <span>across flight path</span>
-                <span>+{(x_max_m / 1000).toFixed(0)} km</span>
-              </div>
-            ))}
+        {hover ? (
+          <div
+            className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full rounded-md border border-[color:var(--line)] bg-[color:var(--surface)] px-2.5 py-1.5 text-[0.68rem] leading-snug tabular-nums text-[var(--accent-deep)] shadow-sm"
+            style={{ left: hover.left, top: hover.top }}
+          >
+            {hover.iwc > 0 ? <>IWC {formatSci(hover.iwc)} kg/m³</> : <>no ice</>}
+            <span className="block text-[var(--muted)]">
+              {hover.xKm.toFixed(1)} km · {hover.yM.toFixed(0)} m
+            </span>
           </div>
-
-          {hover ? (
-            <div
-              className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-full rounded-md border border-[color:var(--line)] bg-[color:var(--surface)] px-2.5 py-1.5 text-[0.68rem] leading-snug tabular-nums text-[var(--accent-deep)] shadow-sm"
-              style={{ left: hover.left, top: hover.top }}
-            >
-              {hover.iwc > 0 ? (
-                <>IWC {formatSci(hover.iwc)} kg/m³</>
-              ) : (
-                <>no ice</>
-              )}
-              <span className="block text-[var(--muted)]">
-                {hover.xKm.toFixed(1)} km · {hover.yM.toFixed(0)} m
-              </span>
-            </div>
-          ) : null}
-
-          <ColourBar manifest={manifest} />
-
-          <p className="mt-3 text-[0.68rem] leading-relaxed text-[var(--muted)]">
-            Every run is at an ambient temperature of {manifest.t_amb_k} K, and
-            every panel shares one fixed window — {spanKm.toFixed(0)} km across
-            the flight path by {spanM.toFixed(0)} m of depth, at{" "}
-            {nx}×{ny} cells — so a shape in one panel means the same thing in
-            all ten. The vertical axis is stretched about {exaggeration.toFixed(0)}×
-            relative to the horizontal; a real contrail at 20 h is far flatter
-            than it looks here. Zero on the vertical axis is the flight level,
-            and the whole sheet sinks as the ice sediments.
-          </p>
-        </div>
+        ) : null}
       </div>
 
       <ScalarTable
@@ -566,7 +569,7 @@ function Panel({
   const atCap = frame >= (info?.n_frames ?? 0) - 1;
 
   return (
-    <div className="mb-1">
+    <div>
       <div
         className="relative overflow-hidden rounded-md border border-[color:var(--line)]"
         style={{ background: `rgb(${NO_ICE_RGB.join(",")})` }}
@@ -580,7 +583,7 @@ function Panel({
           role="img"
           aria-label={label}
           className="block w-full"
-          style={{ aspectRatio: `${nx} / ${ny}` }}
+          style={{ aspectRatio: PANEL_ASPECT }}
         />
         {/* Flight level: the datum the sinking is relative to. */}
         <div
@@ -604,13 +607,13 @@ function Panel({
             </span>
           </div>
         ) : null}
-      </div>
-      <div className="flex items-baseline justify-between gap-2 px-0.5 pt-1 text-[0.62rem] tabular-nums text-[var(--muted)]">
-        <span>
-          {widthKm != null ? `${widthKm.toFixed(1)} km wide` : "—"}
-        </span>
+        {widthKm != null ? (
+          <span className="pointer-events-none absolute left-1.5 top-1 text-[0.6rem] tabular-nums text-[var(--muted)]">
+            {widthKm.toFixed(1)} km wide
+          </span>
+        ) : null}
         {censored && atCap ? (
-          <span className="text-[var(--accent-deep)]">
+          <span className="pointer-events-none absolute right-1.5 top-1 text-[0.6rem] text-[var(--accent-deep)]">
             still alive at the cap
           </span>
         ) : null}
