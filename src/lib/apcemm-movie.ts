@@ -245,21 +245,37 @@ export function caseInfo(
 // ---------------------------------------------------------------------------
 // Colour
 // ---------------------------------------------------------------------------
-// Magnitude, so: one hue, light to dark. Blue, which is both the data-viz
-// default sequential hue and the site accent. The stops are the reference
-// ramp's steps 100-700; a 256-entry RGBA table is interpolated between them
-// once, and every pixel of every frame is then a table lookup.
+// Magnitude, so the ramp is monotonic in lightness: pale at the contrail's
+// edge, near-black in its core. It is multi-hue (reversed magma) rather than
+// one hue, because a single hue has only lightness to spend and the interior
+// of a contrail is where all the structure is -- with one hue the core reads
+// as a solid blob.
 //
-// The scale is LOG in IWC and it starts at the manifest's display floor, not
-// its storage floor. Those are deliberately different numbers: the storage
-// floor sits a decade lower so that area-averaging at the contrail's edge
-// cannot push mass out of the payload irrecoverably, but drawing from there
-// would paint a halo of optically irrelevant haze.
+// **Not a diverging map.** Diverging encodes which side of a baseline a value
+// falls on, and IWC has no baseline: its midpoint would have to be an
+// arbitrary IWC, which a reader would then take for a meaningful threshold.
+//
+// The scale is LOG in IWC and starts at the manifest's display floor, not its
+// storage floor. Those are deliberately different: the storage floor sits a
+// decade lower so area-averaging at the contrail's edge cannot push mass out
+// of the payload irrecoverably, but drawing from there would paint a halo of
+// optically irrelevant haze.
 
-const BLUE_RAMP = [
-  "#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7",
-  "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b",
+const MAGMA_RAMP = [
+  "#fcfdbf", "#fed395", "#fea973", "#fa7d5e", "#e95462", "#c83e73",
+  "#a3307e", "#7e2482", "#59157e", "#331067", "#120d31", "#000004",
 ];
+
+// Log alone is not enough. Measured over the payload: 80% of a frame's ice
+// mass sits between 0.7 and 0.9 of the way up a 1e-9..6e-6 log scale, so the
+// bottom half of the ramp draws almost nothing but the faint rim and the
+// interior gets a fifth of the colours. Raising the floor would fix the
+// contrast by hiding the outer sheet -- including cells the radiative stage
+// still counts, its threshold being 3e-9 -- so instead the ramp position is
+// raised to this power, which spends most of the colours where the ice is
+// while still drawing every cell the payload holds. The colour bar places its
+// ticks through the same curve, so a label still sits at its true value.
+export const SCALE_GAMMA = 3;
 
 /** Background of a cell holding no ice: neutral, so it is never a faint blue. */
 export const NO_ICE_RGB: [number, number, number] = [0xf4, 0xf5, 0xf6];
@@ -272,12 +288,12 @@ function hexToRgb(hex: string): [number, number, number] {
 /** The ramp sampled at `t` in [0, 1]. Exported so the colourbar matches exactly. */
 export function rampColour(t: number): [number, number, number] {
   const clamped = Math.min(1, Math.max(0, t));
-  const position = clamped * (BLUE_RAMP.length - 1);
+  const position = clamped * (MAGMA_RAMP.length - 1);
   const low = Math.floor(position);
-  const high = Math.min(BLUE_RAMP.length - 1, low + 1);
+  const high = Math.min(MAGMA_RAMP.length - 1, low + 1);
   const f = position - low;
-  const a = hexToRgb(BLUE_RAMP[low]);
-  const b = hexToRgb(BLUE_RAMP[high]);
+  const a = hexToRgb(MAGMA_RAMP[low]);
+  const b = hexToRgb(MAGMA_RAMP[high]);
   return [
     Math.round(a[0] + (b[0] - a[0]) * f),
     Math.round(a[1] + (b[1] - a[1]) * f),
@@ -292,6 +308,15 @@ export function rampColour(t: number): [number, number, number] {
  * blue: they carry mass the payload keeps on purpose, but not mass a reader
  * should be asked to see.
  */
+export function scalePosition(
+  value: number,
+  floor: number,
+  ceiling: number,
+): number {
+  const t = (Math.log(value) - Math.log(floor)) / (Math.log(ceiling) - Math.log(floor));
+  return Math.pow(Math.min(1, Math.max(0, t)), SCALE_GAMMA);
+}
+
 export function colourTable(
   manifest: MovieManifest,
   displayFloor: number,
@@ -299,16 +324,12 @@ export function colourTable(
 ): Uint8ClampedArray {
   const decode = decodeTable(manifest);
   const table = new Uint8ClampedArray(256 * 4);
-  const logLo = Math.log(displayFloor);
-  const logSpan = Math.log(displayCeiling) - logLo;
   for (let code = 0; code < 256; code++) {
     const value = decode[code];
-    let rgb: [number, number, number];
-    if (value < displayFloor) {
-      rgb = NO_ICE_RGB;
-    } else {
-      rgb = rampColour((Math.log(value) - logLo) / logSpan);
-    }
+    const rgb =
+      value < displayFloor
+        ? NO_ICE_RGB
+        : rampColour(scalePosition(value, displayFloor, displayCeiling));
     table[code * 4] = rgb[0];
     table[code * 4 + 1] = rgb[1];
     table[code * 4 + 2] = rgb[2];

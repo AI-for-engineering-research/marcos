@@ -19,6 +19,7 @@ import {
   loadScalars,
   loadSootRasters,
   rampColour,
+  scalePosition,
 } from "@/lib/apcemm-movie";
 
 // The panels are ten simultaneous views of one experiment, so everything that
@@ -34,7 +35,7 @@ const FRAME_RATES = [3, 6, 12] as const;
 // screen. The canvas keeps its own resolution; only the box it is stretched
 // into changes, so this is a display choice, not a resampling.
 const PANEL_ASPECT = 4.0;
-const DEFAULT_SOOT_EI = 1e15; // where modern engines sit; the slider moves off it
+const DEFAULT_SOOT_EI = 1e12; // the soot-poor end, where sulfur decides the outcome
 
 type PanelId = { rhiIndex: number; fscIndex: number };
 
@@ -629,9 +630,13 @@ function Panel({
 function ColourBar({ manifest }: { manifest: MovieManifest }) {
   const floor = manifest.quantization.display_floor_kg_m3;
   const ceiling = manifest.quantization.ceiling_kg_m3;
-  const stops = Array.from({ length: 24 }, (_, i) => {
-    const t = i / 23;
-    const [r, g, b] = rampColour(t);
+  // Sampled densely because the gamma makes the gradient non-linear in
+  // position; a browser gradient interpolates straight lines between stops.
+  const stops = Array.from({ length: 48 }, (_, i) => {
+    const t = i / 47;
+    const [r, g, b] = rampColour(
+      scalePosition(floor * Math.pow(ceiling / floor, t), floor, ceiling),
+    );
     return `rgb(${r},${g},${b}) ${(t * 100).toFixed(1)}%`;
   });
   const decades: number[] = [];
@@ -674,10 +679,13 @@ function ColourBar({ manifest }: { manifest: MovieManifest }) {
         </div>
       </div>
       <p className="mt-1 text-[0.62rem] leading-relaxed text-[var(--muted)]">
-        The block on the left is no ice. The scale starts at{" "}
-        {floor.toExponential(0)} kg/m³ — the payload stores a decade below that,
-        so the dissipating edge survives resampling, but drawing from there
-        would paint optically irrelevant haze.
+        The block on the left is no ice. The scale is logarithmic from{" "}
+        {floor.toExponential(0)} kg/m³, and its colours are weighted toward the
+        upper decades: four fifths of a contrail&rsquo;s ice mass sits in the
+        top third of that range, so an even split would spend most of the ramp
+        on the faint rim and paint the interior as one flat colour. Every cell
+        the payload holds is still drawn, and the labels sit at their true
+        values.
       </p>
     </div>
   );
