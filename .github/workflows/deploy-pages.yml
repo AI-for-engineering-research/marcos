@@ -44,6 +44,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
+    # Scoped on the job as well as the workflow. deploy-pages mints an OIDC
+    # token, and its failure mode when it cannot is the opaque "Ensure
+    # GITHUB_TOKEN has permission id-token: write" -- which run 61 hit with the
+    # top-level block already in place.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
